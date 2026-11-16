@@ -1,0 +1,7 @@
+# Los picks pendientes guardan el pick REAL + nonce en claro: NO se publican
+# hasta que se revelan tras el partido. Son el secreto del commit-reveal.
+picks_pendientes/
+
+__pycache__/
+*.pyc
+.DS_Store
