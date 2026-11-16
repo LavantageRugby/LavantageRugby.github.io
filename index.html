@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L'Avantage — Registro público Pro D2</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --line:#262b36; --tx:#e8eaed; --mut:#9aa3b2;
+    --accent:#2e9e6b; --win:#2e9e6b; --loss:#d35b5b; --gold:#d7a51e;
+  }
+  @media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+    --bg:#f7f8fa; --card:#fff; --line:#e6e8ee; --tx:#1a1d24; --mut:#5a6372;}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+    font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+  .wrap{max-width:900px;margin:0 auto;padding:28px 16px 64px}
+  header h1{margin:0 0 4px;font-size:1.7rem;letter-spacing:-.02em}
+  header p{margin:0;color:var(--mut)}
+  .tag{color:var(--gold);font-weight:600}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:12px;margin:24px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .card .k{color:var(--mut);font-size:.8rem;text-transform:uppercase;letter-spacing:.04em}
+  .card .v{font-size:1.5rem;font-weight:700;margin-top:4px}
+  .pos{color:var(--win)} .neg{color:var(--loss)}
+  h2{font-size:1.1rem;margin:28px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.78rem;font-weight:600}
+  .b-win{background:rgba(46,158,107,.15);color:var(--win)}
+  .b-loss{background:rgba(211,91,91,.15);color:var(--loss)}
+  footer{margin-top:40px;color:var(--mut);font-size:.85rem}
+  footer code{background:var(--card);padding:2px 6px;border-radius:6px;border:1px solid var(--line)}
+  .empty{background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:28px;text-align:center;color:var(--mut)}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>L'Avantage · <span class="tag">Pro D2</span></h1>
+    <p>Registro público y verificable. Cada pick se <strong>sella antes del saque</strong> (prueba criptográfica) y se compara con el <strong>cierre de Pinnacle</strong>. Aciertos <em>y</em> fallos, todo a la vista.</p>
+  </header>
+
+  <div id="cards" class="cards"></div>
+  <h2>Por competición</h2>
+  <div id="ligas"></div>
+  <h2>Picks revelados</h2>
+  <div id="picks"></div>
+
+  <footer>
+    <p><strong>Cómo se verifica:</strong> cada pick lleva un hash SHA-256 sellado antes del partido.
+    Nadie puede cambiarlo después; cualquiera lo comprueba con <code>python3 herramientas/verificar.py</code>
+    en el <a href="./">repositorio</a>. No es consejo de inversión; el rugby tiene varianza alta;
+    las unidades son simuladas para medir rendimiento.</p>
+  </footer>
+</div>
+
+<script>
+const U={baja:1,"media-baja":1.5,media:2,"media-alta":2.5,alta:3};
+const f=(n,d=2)=>Number(n).toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d});
+const sign=n=>(n>=0?'+':'')+f(n);
+const cls=n=>n>0?'pos':(n<0?'neg':'');
+
+fetch('registro_publico.jsonl').then(r=>r.ok?r.text():'').then(txt=>{
+  const rows=txt.split('\n').filter(Boolean).map(l=>JSON.parse(l));
+  const rev=rows.filter(r=>r.estado==='REVELADO').map(r=>({...r.revelado,liga:r.liga,partido:r.partido,saque:r.saque}));
+  render(rev, rows.length);
+}).catch(()=>render([],0));
+
+function render(rev,total){
+  const cards=document.getElementById('cards');
+  if(!rev.length){
+    cards.innerHTML='';
+    document.getElementById('ligas').innerHTML=
+      '<div class="empty">Arrancamos muy pronto. Los primeros picks de Pro D2 aparecerán aquí, sellados antes del saque. 🏉</div>';
+    return;
+  }
+  let g=0,p=0,neto=0,clvs=[],baten=0;
+  const byL={};
+  rev.forEach(r=>{
+    if(r.resultado==='acierto')g++; else if(r.resultado==='fallo')p++;
+    neto+=r.neto||0;
+    if(r.clv_ev!=null){clvs.push(r.clv_ev); if(r.clv_ev>0)baten++;}
+    const L=byL[r.liga]||(byL[r.liga]={n:0,g:0,p:0,net:0,st:0});
+    L.n++; L.net+=r.neto||0; L.st+=U[r.confianza]||1;
+    if(r.resultado==='acierto')L.g++; else if(r.resultado==='fallo')L.p++;
+  });
+  const stake=rev.reduce((a,r)=>a+(U[r.confianza]||1),0);
+  const roi=stake?neto/stake*100:0;
+  const clvm=clvs.length?clvs.reduce((a,b)=>a+b,0)/clvs.length*100:null;
+  cards.innerHTML=[
+    ['Picks', rev.length],
+    ['Balance', g+'–'+p],
+    ['Neto (u)', `<span class="${cls(neto)}">${sign(neto)}</span>`],
+    ['ROI', `<span class="${cls(roi)}">${sign(roi)}%</span>`],
+    ['CLV medio', clvm==null?'—':`<span class="${cls(clvm)}">${sign(clvm)}%</span>`],
+    ['Baten cierre', clvs.length?`${baten}/${clvs.length}`:'—'],
+  ].map(([k,v])=>`<div class="card"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+
+  document.getElementById('ligas').innerHTML='<table><tr><th>Liga</th><th class="num">Picks</th><th class="num">G–P</th><th class="num">Neto (u)</th><th class="num">ROI</th></tr>'+
+    Object.entries(byL).sort((a,b)=>b[1].net-a[1].net).map(([L,d])=>{
+      const roi=d.st?d.net/d.st*100:0;
+      return `<tr><td>${L}</td><td class="num">${d.n}</td><td class="num">${d.g}–${d.p}</td><td class="num ${cls(d.net)}">${sign(d.net)}</td><td class="num ${cls(roi)}">${sign(roi)}%</td></tr>`;
+    }).join('')+'</table>';
+
+  document.getElementById('picks').innerHTML='<table><tr><th>Partido</th><th>Liga</th><th>Selección</th><th class="num">Cuota</th><th>Resultado</th><th class="num">Neto</th><th class="num">CLV</th></tr>'+
+    rev.slice().reverse().map(r=>`<tr><td>${r.partido}</td><td>${r.liga}</td><td>${r.seleccion}</td><td class="num">${f(r.cuota)}</td>
+      <td><span class="badge ${r.resultado==='acierto'?'b-win':'b-loss'}">${r.resultado}</span></td>
+      <td class="num ${cls(r.neto)}">${sign(r.neto)}</td>
+      <td class="num ${r.clv_ev==null?'':cls(r.clv_ev)}">${r.clv_ev==null?'—':sign(r.clv_ev*100)+'%'}</td></tr>`).join('')+'</table>';
+}
+</script>
+</body>
+</html>
