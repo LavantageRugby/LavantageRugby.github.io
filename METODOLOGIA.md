@@ -101,7 +101,23 @@ Un sindicato no se fía de un número bonito; pide pruebas concretas. Qué guard
 
 ### Clasificación por estrategia
 Cada pick lleva su **`estrategia`** y se reporta **por separado** (solo algunas tienen señal; mezclarlas
-engaña): **DESC-TOT** (total al descanso, regla T9; al descanso no hay Pinnacle → se juzga por
-resultado), **BLANDA-T30** (casa blanda que paga ≥3 % sobre el justo de Pinnacle ~30 min antes),
-**PRE-NUM** (número a ciegas prepartido; es el **control**, hoy CLV ligeramente negativo). Objetivo de
-las sesiones de datos: **150–300 apuestas por estrategia** antes de enseñar nada a un sindicato.
+engaña). Objetivo de las sesiones de datos: **150–300 apuestas por estrategia** antes de enseñar nada
+a un sindicato.
+
+- **DESC-TOT** — total al descanso (regla T9). Al descanso **no hay Pinnacle** → se juzga por
+  resultado, no por CLV.
+- **BLANDA-T30** — ~30 min antes del saque, casa blanda (22Bet/1xBet, bet365(.es), Bwin.es, Codere,
+  Betway, FanDuel, DK…) que paga con **EV +3 % a +25 %** sobre el justo de Pinnacle en ese momento
+  (método de potencia a la misma línea, cuotas 1,6–2,5; precio con <6 h; una señal por partido). **NO
+  usa nuestro modelo**: es apostar **a favor de Pinnacle** cuando la blanda se queda atrás.
+  - **Cautela honesta (para el dossier, sin maquillar):** aquí el **CLV contra Pinnacle es casi
+    mecánico** (la señal se *define* contra Pinnacle) → **no prueba ventaja**; se juzga por el
+    **resultado** y por el **EV de la señal en el momento (~+5–6 %)**, no por el ROI del backtest
+    (+34 % a T-30 es en gran parte suerte, z≈2,5). Backtest 311 partidos élite (30 jul–15 nov):
+    T-30 54-30, ROI +34 % (IC95 +12/+56, p<0,01), ganadas 54 vs 42,6 esperadas por Pinnacle.
+    **Multiplicidad** (3 momentos × 11 casas × varios cortes) y **la misma idea en fútbol dio −4,7 %**
+    (n=243). **Límite/capacidad en € aún NO medidos** (plausiblemente mayores cerca del saque; se
+    registrará desde el límite de Pinnacle en OddsPapi). Prueba hacia delante (H-BLANDA-T30): 50
+    señales, ROI>0 y ganadas>esperadas; se mide en pasivo con el histórico que entregan los lunes
+    (desde 23/11), sin que el CEO apueste.
+- **PRE-NUM** — número a ciegas prepartido; es el **control** (hoy CLV ligeramente negativo).

@@ -42,6 +42,7 @@ def main():
 
     problemas = []
     ok=0; aciertos=fallos=0; neto=0.0; staked=0.0; clvs=[]; mins=[]; antes=0; total_rev=0
+    por_est = {}   # desglose por estrategia (un sindicato lo exige separado)
     prev = GENESIS
     seq_esperada = 1
 
@@ -86,9 +87,17 @@ def main():
             if rv["resultado"] == "acierto": aciertos += 1
             elif rv["resultado"] == "fallo": fallos += 1
             neto += rv["neto"]
-            staked += sec.get("stake", 0) or 0
+            st = sec.get("stake", 0) or 0
+            staked += st
             if sec.get("mins_antes_saque") is not None: mins.append(sec["mins_antes_saque"])
             if rv.get("clv_ev") is not None: clvs.append(rv["clv_ev"])
+            # desglose por estrategia
+            e = r.get("estrategia") or sec.get("estrategia") or "?"
+            d = por_est.setdefault(e, {"n":0,"a":0,"f":0,"neto":0.0,"staked":0.0,"clvs":[]})
+            d["n"]+=1; d["neto"]+=rv["neto"]; d["staked"]+=st
+            if rv["resultado"]=="acierto": d["a"]+=1
+            elif rv["resultado"]=="fallo": d["f"]+=1
+            if rv.get("clv_ev") is not None: d["clvs"].append(rv["clv_ev"])
         else:
             # 4) SELLADO: no puede estar vencido sin revelar
             if dt(r["saque"]) < ahora:
@@ -108,6 +117,14 @@ def main():
     if mins:
         mm = sorted(mins)[len(mins)//2]
         print(f"Antelacion al saque  : mediana {mm} min  (min {min(mins)} / max {max(mins)})")
+    if por_est:
+        print("-"*58)
+        print("Por estrategia (se juzga cada una por separado):")
+        for e in sorted(por_est):
+            d = por_est[e]; r_ = (d["neto"]/d["staked"]) if d["staked"] else 0.0
+            cl = f" | CLV {sum(d['clvs'])/len(d['clvs']):+.2%}" if d["clvs"] else ""
+            nota = "  (CLV casi mecanico: juzgar por resultado)" if e=="BLANDA-T30" else ""
+            print(f"   {e:<12} n={d['n']:<3} {d['a']}-{d['f']}  ROI {r_:+.1%}{cl}{nota}")
     print("="*58)
     if problemas:
         print(f"INTEGRIDAD: {len(problemas)} PROBLEMA(S) -- registro NO fiable:")
