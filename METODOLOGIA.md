@@ -67,11 +67,15 @@ humedad, punto de rocío, viento y tipo de césped (natural/sintético)**. Base 
 
 Un sindicato no se fía de un número bonito; pide pruebas concretas. Qué guardamos y cómo se presenta:
 
-1. **Que la cuota existía de verdad.** En cada sello van **cuota, casa, selección, línea exacta y
-   hora**. Cuando es posible, además la **foto del mercado de Pinnacle en ese mismo minuto**
-   (`pin_sello` = cuota de Pinnacle a nuestra misma selección/línea al sellar). *Pendiente: enganchar
-   la captura externa automática (OddsPapi / The Odds API) desde las sesiones de cuotas, para que ese
-   snapshot lo firme una fuente de fuera y no solo nosotros.*
+1. **Que la cuota existía de verdad, verificable por un tercero.** En cada sello van **cuota, casa,
+   selección, línea exacta y hora**, más `pin_sello` y `pin_contrario` (Pinnacle a nuestra línea y al
+   lado contrario en ese minuto). Clave: ninguna API de cuotas *firma* sus respuestas, así que un JSON
+   que guardemos nosotros —aunque lleve OTS— solo prueba que lo **teníamos**, no que sea auténtico. Lo
+   que lo hace **independiente** es guardar la **referencia de OddsPapi** (`fixture_id`, `market_id`,
+   `outcome_id`): cualquiera con una cuenta de OddsPapi vuelve a pedir ese partido en `/historical-odds`
+   y comprueba qué precio tenía Pinnacle en ese minuto, **sin fiarse de nosotros**. El `snapshot` crudo
+   se guarda y se ancla con OTS solo como apoyo. *(Pendiente: que las sesiones de cuotas rellenen esos
+   ids y el snapshot al sellar.)*
 2. **Límite y liquidez.** `limite` = cuánto se podía jugar a ese precio (límite de la casa o dinero en
    Betfair). Una ventaja en mercados de 200–500 € vale poco; se enseña, no se esconde.
 3. **CLV bien medido.** Contra el **cierre SIN MARGEN de Pinnacle y a la MISMA línea** (`revelar.py`
@@ -90,3 +94,14 @@ Un sindicato no se fía de un número bonito; pide pruebas concretas. Qué guard
    su precio conseguido. Por eso importan la **latencia de envío** y que los picks sean **exclusivos**:
    publicarlos en abierto antes del saque mata su valor. El commit-reveal encaja justo por eso (no
    enseña el pick hasta después del partido).
+8. **Precio realmente conseguido (slippage).** Lo que se registra es la **cuota sellada**; que esa cuota
+   se consiguiera de verdad (y a cuánto) es otra cosa. En el histórico cada pick va marcado como
+   **"cuota sellada, sin ejecución comprobada"** (`ejecucion`), sin fingir que se apostó. El slippage
+   real (cuota obtenida vs sellada, e importe) lo miden ELLOS en el período en vivo.
+
+### Clasificación por estrategia
+Cada pick lleva su **`estrategia`** y se reporta **por separado** (solo algunas tienen señal; mezclarlas
+engaña): **DESC-TOT** (total al descanso, regla T9; al descanso no hay Pinnacle → se juzga por
+resultado), **BLANDA-T30** (casa blanda que paga ≥3 % sobre el justo de Pinnacle ~30 min antes),
+**PRE-NUM** (número a ciegas prepartido; es el **control**, hoy CLV ligeramente negativo). Objetivo de
+las sesiones de datos: **150–300 apuestas por estrategia** antes de enseñar nada a un sindicato.
