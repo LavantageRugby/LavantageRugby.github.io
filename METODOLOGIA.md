@@ -50,6 +50,9 @@ humedad, punto de rocío, viento y tipo de césped (natural/sintético)**. Base 
 - **Cuota registrada** = la disponible **en el momento del sello** (así el CLV compara contra el cierre).
 - **CLV** = cuota sellada × prob. implícita del **cierre de Pinnacle** − 1. `> 0` = batió el cierre.
   (El de-vig fino de Pinnacle se aplica en el cálculo agregado; aquí se guarda el dato base.)
+- **Staking casi plano (a propósito).** En la práctica la inmensa mayoría de picks van a **1 u**,
+  alguno a 1,5 y **rara vez (casi nunca) 2**. Es deliberado: así el resultado depende de **acertar el
+  pick**, no de "haber acertado con el tamaño de la apuesta". Hace el registro más fácil de auditar.
 
 ## Alcance y prudencia
 
