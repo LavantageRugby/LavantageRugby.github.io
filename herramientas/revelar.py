@@ -22,7 +22,10 @@ def main():
     ap.add_argument("--id", required=True)
     ap.add_argument("--marcador", required=True)
     ap.add_argument("--resultado", required=True, choices=["acierto","fallo","nula"])
-    ap.add_argument("--cierre_pin", type=float, default=None, help="cuota de cierre de Pinnacle (para CLV)")
+    ap.add_argument("--cierre_pin", type=float, default=None,
+                    help="cuota de cierre de Pinnacle en NUESTRA seleccion y A LA MISMA LINEA (para CLV)")
+    ap.add_argument("--cierre_contrario", type=float, default=None,
+                    help="cuota de cierre de Pinnacle del LADO CONTRARIO a la misma linea; con esto el CLV se mide SIN MARGEN (de-vig), que es lo correcto")
     a = ap.parse_args()
 
     pend = PEND / f"{a.id}.json"
@@ -36,15 +39,23 @@ def main():
     elif a.resultado == "fallo": neto = -stake
     else: neto = 0.0
 
-    # CLV: EV del pick a la prob justa implicita del cierre de Pinnacle (sin de-vig fino aqui)
-    clv = None
+    # CLV = EV de nuestra cuota contra el cierre de Pinnacle a la MISMA linea.
+    # Lo correcto es contra el cierre SIN MARGEN (de-vig): si tenemos el lado contrario,
+    # quitamos el margen; si no, usamos 1/cierre (con margen -> CLV algo infravalorado) y se avisa.
+    clv = None; clv_metodo = None
     if a.cierre_pin:
-        p_cierre = 1/a.cierre_pin
-        clv = round(secreto["cuota"]*p_cierre - 1, 4)  # >0 = batio el cierre
+        if a.cierre_contrario:
+            p_fair = (1/a.cierre_pin) / (1/a.cierre_pin + 1/a.cierre_contrario)  # de-vig 2 vias
+            clv_metodo = "sin_margen"
+        else:
+            p_fair = 1/a.cierre_pin
+            clv_metodo = "con_margen"  # aproximado; falta el lado contrario
+        clv = round(secreto["cuota"]*p_fair - 1, 4)  # >0 = batio el cierre
 
     SELL.mkdir(exist_ok=True)
-    revel = dict(secreto, marcador=a.marcador, resultado=a.resultado,
-                 stake=stake, neto=neto, cierre_pinnacle=a.cierre_pin, clv_ev=clv)
+    revel = dict(secreto, marcador=a.marcador, resultado=a.resultado, stake=stake, neto=neto,
+                 cierre_pinnacle=a.cierre_pin, cierre_contrario=a.cierre_contrario,
+                 clv_ev=clv, clv_metodo=clv_metodo)
     (SELL / f"{a.id}.json").write_text(json.dumps(revel, ensure_ascii=False, indent=2), encoding="utf-8")
 
     # actualizar la linea publica del registro
@@ -52,15 +63,19 @@ def main():
     for r in lineas:
         if r["id"] == a.id:
             r["estado"] = "REVELADO"
-            r["revelado"] = {k:secreto[k] for k in ("seleccion","linea","cuota","confianza")}
-            r["revelado"].update(marcador=a.marcador, resultado=a.resultado, neto=neto,
-                                 cierre_pinnacle=a.cierre_pin, clv_ev=clv)
+            r["revelado"] = {k:secreto[k] for k in ("seleccion","linea","cuota","casa","confianza")}
+            r["revelado"].update(marcador=a.marcador, resultado=a.resultado, stake=stake, neto=neto,
+                                 cierre_pinnacle=a.cierre_pin, cierre_contrario=a.cierre_contrario,
+                                 clv_ev=clv, clv_metodo=clv_metodo)
     with REG.open("w", encoding="utf-8") as f:
         for r in lineas: f.write(json.dumps(r, ensure_ascii=False)+"\n")
 
     pend.unlink()  # ya no es secreto
-    print(f"✅ REVELADO {a.id}: {secreto['seleccion']} @ {secreto['cuota']} -> {a.resultado} ({neto:+.3f} u)"
-          + (f" | CLV {clv:+.3%}" if clv is not None else ""))
+    nota_clv = ""
+    if clv is not None:
+        nota_clv = f" | CLV {clv:+.3%} ({'sin margen' if clv_metodo=='sin_margen' else 'con margen, aprox.'})"
+    print(f"✅ REVELADO {a.id}: {secreto['seleccion']} @ {secreto['cuota']} ({secreto.get('casa','?')}) "
+          f"-> {a.resultado} ({neto:+.3f} u){nota_clv}")
 
 if __name__ == "__main__":
     main()

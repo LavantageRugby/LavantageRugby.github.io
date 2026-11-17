@@ -26,7 +26,8 @@ SELL = BASE / "picks_sellados"
 ANCLAS = BASE / "anclas_ots"
 GENESIS = "GENESIS"
 HASH_KEYS = ("seq","prev_hash","partido","liga","mercado","seleccion","linea",
-             "cuota","confianza","saque","seal_ts","nonce")
+             "cuota","casa","pin_sello","limite","confianza","saque","seal_ts",
+             "mins_antes_saque","nonce")
 
 def dt(s):
     return datetime.datetime.fromisoformat(s)
@@ -39,7 +40,7 @@ def main():
     ahora = datetime.datetime.now(datetime.timezone.utc)
 
     problemas = []
-    ok=0; aciertos=fallos=0; neto=0.0; clvs=[]; antes=0; total_rev=0
+    ok=0; aciertos=fallos=0; neto=0.0; staked=0.0; clvs=[]; mins=[]; antes=0; total_rev=0
     prev = GENESIS
     seq_esperada = 1
 
@@ -78,6 +79,8 @@ def main():
             if rv["resultado"] == "acierto": aciertos += 1
             elif rv["resultado"] == "fallo": fallos += 1
             neto += rv["neto"]
+            staked += sec.get("stake", 0) or 0
+            if sec.get("mins_antes_saque") is not None: mins.append(sec["mins_antes_saque"])
             if rv.get("clv_ev") is not None: clvs.append(rv["clv_ev"])
         else:
             # 4) SELLADO: no puede estar vencido sin revelar
@@ -89,10 +92,15 @@ def main():
     print(f"Picks en el registro : {len(filas)}  (revelados {total_rev})")
     print(f"Hash correcto        : {ok}/{total_rev}")
     print(f"Sellados ANTES saque : {antes}/{ok}")
-    print(f"Balance              : {aciertos}-{fallos}   neto {neto:+.3f} u")
+    roi = (neto/staked) if staked else 0.0
+    print(f"Balance              : {aciertos}-{fallos}   neto {neto:+.3f} u sobre {staked:.1f} u jugadas")
+    print(f"ROI                  : {roi:+.2%}   (muestra n={total_rev}; sin volumen NO concluye nada)")
     if clvs:
         m = sum(clvs)/len(clvs); baten = sum(1 for c in clvs if c>0)
-        print(f"CLV medio vs cierre  : {m:+.2%}  ({baten}/{len(clvs)} baten el cierre)")
+        print(f"CLV medio vs cierre  : {m:+.2%}  ({baten}/{len(clvs)} baten el cierre)  -- leer SIEMPRE junto al ROI")
+    if mins:
+        mm = sorted(mins)[len(mins)//2]
+        print(f"Antelacion al saque  : mediana {mm} min  (min {min(mins)} / max {max(mins)})")
     print("="*58)
     if problemas:
         print(f"INTEGRIDAD: {len(problemas)} PROBLEMA(S) -- registro NO fiable:")

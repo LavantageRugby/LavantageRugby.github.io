@@ -58,27 +58,42 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--partido", required=True)
     ap.add_argument("--liga", required=True)
-    ap.add_argument("--mercado", required=True, choices=["handicap","total"])
-    ap.add_argument("--seleccion", required=True, help="p.ej. 'Local -7.5' o 'Mas de 50.5'")
-    ap.add_argument("--linea", required=True, type=float)
+    ap.add_argument("--mercado", required=True, choices=["handicap","total","1x2"])
+    ap.add_argument("--seleccion", required=True,
+                    help="p.ej. 'Local -7.5' (handicap), 'Mas de 50.5' (total), 'Local'/'Empate'/'Visitante' (1x2)")
+    ap.add_argument("--linea", type=float, default=None,
+                    help="linea del handicap/total; en 1x2 se OMITE (no aplica)")
     ap.add_argument("--cuota", required=True, type=float)
+    ap.add_argument("--casa", required=True, help="casa de apuestas donde estaba esa cuota (bet365, Winamax, Betfair...)")
     ap.add_argument("--confianza", default="baja")
     ap.add_argument("--saque", required=True, help="ISO del saque, p.ej 2026-11-21T20:00:00+01:00")
+    ap.add_argument("--pin_sello", type=float, default=None,
+                    help="cuota de Pinnacle en ESA MISMA seleccion/linea en el momento del sello (prueba de que el precio existia y contexto de mercado)")
+    ap.add_argument("--limite", default=None,
+                    help="cuanto se podia jugar a ese precio: limite de la casa o liquidez en Betfair, p.ej '500 EUR'")
     a = ap.parse_args()
 
+    if a.mercado in ("handicap","total") and a.linea is None:
+        raise SystemExit("--linea es obligatoria para handicap/total (en 1x2 se omite).")
+
+    # minutos de antelacion al saque (cuanto antes del cierre se sello)
     seal_ts = ahora_madrid()
     filas = leer_registro()
     seq = len(filas) + 1
     prev_hash = filas[-1]["commit_sha256"] if filas else GENESIS
     pid = f"{seq:04d}-{a.partido.replace(' ','_').replace('/','-')[:30]}-{a.mercado}"
+    # antelacion al saque, en minutos: cuanto antes del cierre se sello (lo pide el sindicato)
+    mins_antes = round((datetime.datetime.fromisoformat(a.saque)
+                        - datetime.datetime.fromisoformat(seal_ts)).total_seconds() / 60)
 
     # El secreto INCLUYE seq y prev_hash -> quedan fijados en el hash (no se pueden alterar luego).
     secreto = {
         "seq": seq, "prev_hash": prev_hash,
         "partido": a.partido, "liga": a.liga, "mercado": a.mercado,
-        "seleccion": a.seleccion, "linea": a.linea, "cuota": a.cuota,
+        "seleccion": a.seleccion, "linea": a.linea, "cuota": a.cuota, "casa": a.casa,
+        "pin_sello": a.pin_sello, "limite": a.limite,
         "confianza": a.confianza, "saque": a.saque, "seal_ts": seal_ts,
-        "nonce": secrets.token_hex(16),
+        "mins_antes_saque": mins_antes, "nonce": secrets.token_hex(16),
     }
     plano = json.dumps(secreto, sort_keys=True, ensure_ascii=False)
     commit = hashlib.sha256(plano.encode("utf-8")).hexdigest()
@@ -89,7 +104,8 @@ def main():
     # prev_hash y seq van tambien en la linea PUBLICA -> la cadena es comprobable por cualquiera.
     publico = {
         "id": pid, "seq": seq, "prev_hash": prev_hash, "sellado_ts": seal_ts,
-        "partido": a.partido, "liga": a.liga, "mercado": a.mercado, "saque": a.saque,
+        "partido": a.partido, "liga": a.liga, "mercado": a.mercado, "casa": a.casa,
+        "saque": a.saque, "mins_antes_saque": mins_antes,
         "commit_sha256": commit, "estado": "SELLADO", "revelado": None,
     }
     with REG.open("a", encoding="utf-8") as f:
@@ -98,7 +114,7 @@ def main():
     estado_ots, detalle = anclar_ots(pid, commit)
 
     print(f"SELLADO #{seq} {pid}")
-    print(f"   hora de sello: {seal_ts}")
+    print(f"   hora de sello: {seal_ts}  ({mins_antes} min antes del saque, casa: {a.casa})")
     print(f"   prev_hash    : {prev_hash[:16]}{'...' if prev_hash!=GENESIS else ''}")
     print(f"   hash publico : {commit}")
     if estado_ots == "OK":
