@@ -4,6 +4,17 @@ La **sesión de cuotas** (Deportivo/Rugby) saca la referencia externa con
 `~/analisis_deportivo/analisis/sello_op.py`; aquí se sella y se publica. **Nada se sella ni se
 publica sin el OK explícito del CEO cada vez.**
 
+## ⚠️ Cupo de OddsPapi (no agotarlo)
+
+El cupo va justo (143/250 a 17/11; el CEO pide no agotarlo). Reglas:
+- **`buscar` es lo ÚNICO que gasta**: 1 consulta la **primera vez de cada día** (luego la lista de
+  partidos queda guardada en `datos/sellos_op/proximos_AAAAMMDD.json`).
+- **`foto` y `cierre` son GRATIS** (historical-odds).
+- Por eso: hacer **`buscar` UNA sola vez por jornada** y **reutilizar los `fixtureId`** de la lista
+  guardada para todos los sellos y cierres de ese día.
+- La herramienta **se niega a pedir lista si la cuenta pasa de 246** y pide poner el `fixtureId` a
+  mano. El cupo **vuelve a 250 el 1 de diciembre**.
+
 ## Flujo para sellar un pick (cuando el CEO lo autoriza)
 
 1. **Sesión de cuotas** — buscar el partido y hacer la foto de Pinnacle al sellar:
