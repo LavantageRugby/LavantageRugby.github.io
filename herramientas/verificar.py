@@ -25,8 +25,9 @@ REG = BASE / "registro_publico.jsonl"
 SELL = BASE / "picks_sellados"
 ANCLAS = BASE / "anclas_ots"
 GENESIS = "GENESIS"
-HASH_KEYS = ("seq","prev_hash","partido","liga","mercado","seleccion","linea",
-             "cuota","casa","pin_sello","limite","confianza","saque","seal_ts",
+HASH_KEYS = ("seq","prev_hash","partido","liga","estrategia","mercado","seleccion","linea",
+             "cuota","casa","pin_sello","pin_contrario","limite","fixture_id","market_id",
+             "outcome_id","snapshot_sha256","ejecucion","confianza","saque","seal_ts",
              "mins_antes_saque","nonce")
 
 def dt(s):
@@ -61,6 +62,12 @@ def main():
             problemas.append(f"{rid}: FALTA la prueba OpenTimestamps (anclas_ots/{rid}.sha256.ots)")
         elif not hf.exists() or hf.read_text(encoding="utf-8").strip() != r["commit_sha256"]:
             problemas.append(f"{rid}: el hash anclado en OTS NO coincide con el commit del pick")
+
+        # SNAPSHOT de mercado (si el pick declara uno): el fichero debe existir y casar con su hash.
+        if r.get("snapshot_sha256"):
+            snf = BASE / "snapshots" / f"{rid}.json"
+            if not snf.exists() or hashlib.sha256(snf.read_bytes()).hexdigest() != r["snapshot_sha256"]:
+                problemas.append(f"{rid}: el snapshot de mercado falta o no casa con su hash")
 
         if r["estado"] == "REVELADO":
             total_rev += 1

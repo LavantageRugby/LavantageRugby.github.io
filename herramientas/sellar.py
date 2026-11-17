@@ -59,6 +59,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--partido", required=True)
     ap.add_argument("--liga", required=True)
+    ap.add_argument("--estrategia", default="PRE-NUM",
+                    help="estrategia (se reporta por separado; solo algunas tienen senal): "
+                         "DESC-TOT (total al descanso, regla T9), BLANDA-T30 (casa blanda >=3%% sobre justo ~30min antes), "
+                         "PRE-NUM (numero a ciegas prepartido, es el CONTROL)")
     ap.add_argument("--mercado", required=True, choices=["handicap","total","1x2"])
     ap.add_argument("--seleccion", required=True,
                     help="p.ej. 'Local -7.5' (handicap), 'Mas de 50.5' (total), 'Local'/'Empate'/'Visitante' (1x2)")
@@ -72,10 +76,26 @@ def main():
                     help="cuota de Pinnacle en ESA MISMA seleccion/linea en el momento del sello (prueba de que el precio existia y contexto de mercado)")
     ap.add_argument("--limite", default=None,
                     help="cuanto se podia jugar a ese precio: limite de la casa o liquidez en Betfair, p.ej '500 EUR'")
+    # Referencia a OddsPapi: lo que hace la prueba de la cuota INDEPENDIENTE (cualquiera la re-consulta
+    # en /historical-odds, no tiene que fiarse de nuestro JSON). Lo rellenan las sesiones de cuotas.
+    ap.add_argument("--fixture_id", default=None, help="OddsPapi fixture_id (re-verificar en /historical-odds)")
+    ap.add_argument("--market_id", default=None, help="OddsPapi market id")
+    ap.add_argument("--outcome_id", default=None, help="OddsPapi outcome id")
+    ap.add_argument("--pin_contrario", type=float, default=None,
+                    help="cuota de Pinnacle del LADO CONTRARIO a la misma linea, al sellar")
+    ap.add_argument("--snapshot_json", default=None,
+                    help="ruta al JSON crudo de OddsPapi en el momento del sello; se copia al repo, se hashea y se ancla con OTS")
+    ap.add_argument("--ejecucion", default="sellada_sin_ejecucion_comprobada",
+                    help="estado de ejecucion. Por defecto 'cuota sellada, sin ejecucion comprobada' (historico). Si se jugo de verdad, se anota la cuota obtenida al revelar (slippage).")
     a = ap.parse_args()
 
     if a.mercado in ("handicap","total") and a.linea is None:
         raise SystemExit("--linea es obligatoria para handicap/total (en 1x2 se omite).")
+
+    # hash del snapshot de mercado (si se aporta) -> queda fijado en el sello y se ancla con OTS
+    snap_sha = None
+    if a.snapshot_json:
+        snap_sha = hashlib.sha256(pathlib.Path(a.snapshot_json).read_bytes()).hexdigest()
 
     # minutos de antelacion al saque (cuanto antes del cierre se sello)
     seal_ts = ahora_madrid()
@@ -90,9 +110,11 @@ def main():
     # El secreto INCLUYE seq y prev_hash -> quedan fijados en el hash (no se pueden alterar luego).
     secreto = {
         "seq": seq, "prev_hash": prev_hash,
-        "partido": a.partido, "liga": a.liga, "mercado": a.mercado,
+        "partido": a.partido, "liga": a.liga, "estrategia": a.estrategia, "mercado": a.mercado,
         "seleccion": a.seleccion, "linea": a.linea, "cuota": a.cuota, "casa": a.casa,
-        "pin_sello": a.pin_sello, "limite": a.limite,
+        "pin_sello": a.pin_sello, "pin_contrario": a.pin_contrario, "limite": a.limite,
+        "fixture_id": a.fixture_id, "market_id": a.market_id, "outcome_id": a.outcome_id,
+        "snapshot_sha256": snap_sha, "ejecucion": a.ejecucion,
         "confianza": a.confianza, "saque": a.saque, "seal_ts": seal_ts,
         "mins_antes_saque": mins_antes, "nonce": secrets.token_hex(16),
     }
@@ -103,14 +125,27 @@ def main():
     (PEND / f"{pid}.json").write_text(json.dumps(secreto, ensure_ascii=False, indent=2), encoding="utf-8")
 
     # prev_hash y seq van tambien en la linea PUBLICA -> la cadena es comprobable por cualquiera.
+    # fixture_id publico: permite re-verificar la cuota en OddsPapi/historical-odds SIN fiarse de nosotros.
     publico = {
         "id": pid, "seq": seq, "prev_hash": prev_hash, "sellado_ts": seal_ts,
-        "partido": a.partido, "liga": a.liga, "mercado": a.mercado, "casa": a.casa,
-        "saque": a.saque, "mins_antes_saque": mins_antes,
+        "partido": a.partido, "liga": a.liga, "estrategia": a.estrategia,
+        "mercado": a.mercado, "casa": a.casa, "saque": a.saque, "mins_antes_saque": mins_antes,
+        "fixture_id": a.fixture_id, "snapshot_sha256": snap_sha, "ejecucion": a.ejecucion,
         "commit_sha256": commit, "estado": "SELLADO", "revelado": None,
     }
     with REG.open("a", encoding="utf-8") as f:
         f.write(json.dumps(publico, ensure_ascii=False) + "\n")
+
+    # Copiar y ANCLAR el snapshot crudo de mercado (si se aporto): asi la foto de Pinnacle del
+    # momento queda con su propia prueba de hora OTS. (La autenticidad real la da re-consultar el
+    # fixture_id en OddsPapi/historical-odds; esto solo prueba que lo teniamos a esa hora.)
+    if a.snapshot_json:
+        SNAPS = BASE / "snapshots"; SNAPS.mkdir(exist_ok=True)
+        dest = SNAPS / f"{pid}.json"
+        dest.write_bytes(pathlib.Path(a.snapshot_json).read_bytes())
+        if pathlib.Path(OTS).exists():
+            try: subprocess.run([OTS, "stamp", str(dest)], capture_output=True, text=True, timeout=90)
+            except Exception: pass
 
     estado_ots, detalle = anclar_ots(pid, commit)
 
