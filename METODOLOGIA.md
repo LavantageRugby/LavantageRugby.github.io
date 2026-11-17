@@ -13,6 +13,24 @@ Reglas **declaradas de antemano y fijas** (la consistencia es parte de la honest
   alineación tardía), no se toca. Clavarlo con antelación es precisamente el mérito; los cambios
   tardíos son parte de la varianza que se intenta batir.
 
+## Garantías de integridad (para el escéptico)
+
+Un registro así tiene dos agujeros clásicos. Los dos están tapados y **`verificar.py` falla si se
+incumplen**:
+
+1. **No se puede esconder un perdido ("cherry-picking").** Los sellos van **encadenados**: cada pick
+   incluye el hash del anterior (`prev_hash`) y un número de orden (`seq`). No se puede borrar,
+   insertar ni reordenar ningún pick sin romper la cadena. Y **todo pick sellado cuyo partido ya se
+   jugó TIENE que estar revelado**: si uno queda "sellado para siempre" después de su saque, el
+   verificador lo marca como posible perdido escondido. → Si se sella, se revela. Siempre.
+
+2. **La prueba de la HORA no es la fecha del commit de git.** Esa fecha la pone el autor y se puede
+   falsear. La prueba real de que el pick existía antes del saque es la **hora de PUSH que registra
+   GitHub** (queda en el historial de la plataforma y **no es reescribible**). Por eso la regla es:
+   **sellar y hacer `git push` ANTES del saque.** Además la rama `main` va **protegida: sin
+   force-push y con historial lineal**, para que no se pueda reescribir la historia. (Refuerzo
+   opcional futuro: sello OpenTimestamps anclado a Bitcoin.)
+
 ## Datos que entran en cada decisión (modelo casero)
 
 Alineaciones y rotaciones, forma y H2H, localía, bajas, banco, y contexto físico: **tiempo,

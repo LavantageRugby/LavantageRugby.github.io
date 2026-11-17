@@ -25,6 +25,15 @@ Cada pick se **sella ANTES del saque** con un esquema *commit-reveal*:
 - **CLV (valor de línea de cierre)**: si las selecciones **baten el cierre de Pinnacle**.
   Es lo que separa **ventaja real** de **suerte**. Perseguimos los dos.
 
+## Dos trampas que NO se pueden hacer aquí
+
+- **Esconder los perdidos:** los sellos van **encadenados** (cada uno lleva el hash del anterior) y
+  **todo pick sellado cuyo partido ya se jugó tiene que estar revelado**. No se puede publicar diez y
+  revelar solo los que ganan: `verificar.py` lo caza.
+- **Falsear la hora:** la fecha del commit de git no cuenta (la pone el autor). La prueba es la **hora
+  de push de GitHub** (no reescribible) con la rama protegida sin force-push. Regla: sellar y empujar
+  **antes del saque**. Detalle en [METODOLOGIA.md](METODOLOGIA.md).
+
 ## Honestidad (lo que esto NO es)
 
 - **No es consejo de inversión** ni una promesa de ganancias. El rugby tiene **varianza alta**.
