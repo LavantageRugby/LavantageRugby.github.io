@@ -87,7 +87,32 @@ def main():
                     help="ruta al JSON crudo de OddsPapi en el momento del sello; se copia al repo, se hashea y se ancla con OTS")
     ap.add_argument("--ejecucion", default="sellada_sin_ejecucion_comprobada",
                     help="estado de ejecucion. Por defecto 'cuota sellada, sin ejecucion comprobada' (historico). Si se jugo de verdad, se anota la cuota obtenida al revelar (slippage).")
+    ap.add_argument("--op_foto", default=None,
+                    help="ruta al JSON que saca `sello_op.py foto --casa pinnacle` (sesion de cuotas): rellena fixture/market/outcome/pin_sello/pin_contrario/limite que no pongas a mano")
+    ap.add_argument("--op_crudo", default=None,
+                    help="ruta al crudo .json.gz que cita ese JSON (datos/sellos_op/...); se descomprime, se guarda como snapshot y su sha256 debe casar con crudo_sha256")
     a = ap.parse_args()
+
+    # Integracion con sello_op.py: rellenar SOLO los huecos (los flags explicitos mandan).
+    op_sha_esperado = None
+    if a.op_foto:
+        op = json.loads(pathlib.Path(a.op_foto).read_text(encoding="utf-8"))
+        if a.fixture_id is None: a.fixture_id = op.get("fixture_id")
+        if a.market_id is None: a.market_id = op.get("market_id")
+        if a.outcome_id is None: a.outcome_id = op.get("outcome_id")
+        if a.limite is None: a.limite = (op.get("sello") or {}).get("limite")
+        # pin_sello/pin_contrario solo si la foto es de Pinnacle (son la referencia de CLV)
+        if op.get("casa") == "pinnacle":
+            if a.pin_sello is None: a.pin_sello = (op.get("sello") or {}).get("cuota")
+            if a.pin_contrario is None: a.pin_contrario = (op.get("contrario") or {}).get("cuota")
+        else:
+            print(f"   AVISO: --op_foto es de casa '{op.get('casa')}', no Pinnacle: no relleno pin_sello/pin_contrario.")
+        op_sha_esperado = op.get("crudo_sha256")
+        if a.op_crudo and a.snapshot_json is None:
+            import gzip, tempfile
+            plano = gzip.open(a.op_crudo, "rt", encoding="utf-8").read()
+            tmp = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8")
+            tmp.write(plano); tmp.close(); a.snapshot_json = tmp.name
 
     if a.mercado in ("handicap","total") and a.linea is None:
         raise SystemExit("--linea es obligatoria para handicap/total (en 1x2 se omite).")
@@ -96,6 +121,9 @@ def main():
     snap_sha = None
     if a.snapshot_json:
         snap_sha = hashlib.sha256(pathlib.Path(a.snapshot_json).read_bytes()).hexdigest()
+        if op_sha_esperado and snap_sha != op_sha_esperado:
+            raise SystemExit(f"El snapshot descomprimido NO casa con crudo_sha256 de OddsPapi "
+                             f"({snap_sha[:12]} != {op_sha_esperado[:12]}); no sello con un snapshot dudoso.")
 
     # minutos de antelacion al saque (cuanto antes del cierre se sello)
     seal_ts = ahora_madrid()
