@@ -3,115 +3,228 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>L'Avantage — Registro público Pro D2</title>
+<title>L'Avantage — Registro público verificable</title>
+<meta name="description" content="Registro público y verificable de pronósticos de rugby. Cada pick se sella criptográficamente antes del evento (commit-reveal) con prueba de hora permanente. Aciertos y fallos, todo a la vista.">
 <style>
   :root{
-    --bg:#0f1115; --card:#171a21; --line:#262b36; --tx:#e8eaed; --mut:#9aa3b2;
-    --accent:#2e9e6b; --win:#2e9e6b; --loss:#d35b5b; --gold:#d7a51e;
+    --bg:#0e1014; --card:#161a22; --line:#262b36; --tx:#e9ecf1; --mut:#9aa3b2;
+    --accent:#2e9e6b; --win:#2fae76; --loss:#d35b5b; --gold:#e0b23c; --chip:#1f2430;
   }
   @media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
-    --bg:#f7f8fa; --card:#fff; --line:#e6e8ee; --tx:#1a1d24; --mut:#5a6372;}}
+    --bg:#f6f7f9; --card:#ffffff; --line:#e6e8ee; --tx:#171b22; --mut:#5a6372; --chip:#eef1f6;}}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--tx);
     font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
-  .wrap{max-width:900px;margin:0 auto;padding:28px 16px 64px}
-  header h1{margin:0 0 4px;font-size:1.7rem;letter-spacing:-.02em}
-  header p{margin:0;color:var(--mut)}
-  .tag{color:var(--gold);font-weight:600}
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:12px;margin:24px 0}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
-  .card .k{color:var(--mut);font-size:.8rem;text-transform:uppercase;letter-spacing:.04em}
-  .card .v{font-size:1.5rem;font-weight:700;margin-top:4px}
+  .wrap{max-width:920px;margin:0 auto;padding:26px 16px 72px}
+  header h1{margin:0 0 4px;font-size:1.75rem;letter-spacing:-.02em}
+  header h1 .tag{color:var(--gold)}
+  header .sub{margin:0;color:var(--mut);max-width:62ch}
+  .meta{margin-top:8px;color:var(--mut);font-size:.82rem}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--win);margin-right:5px;vertical-align:middle}
+
+  .tabs{display:flex;gap:6px;margin:22px 0 4px;background:var(--chip);padding:5px;border-radius:12px;max-width:420px}
+  .tabs button{flex:1;border:0;background:transparent;color:var(--mut);font-weight:600;font-size:.9rem;
+    padding:9px 8px;border-radius:9px;cursor:pointer}
+  .tabs button.on{background:var(--card);color:var(--tx);box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .viewnote{color:var(--mut);font-size:.84rem;margin:10px 2px 0}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:16px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+  .card .k{color:var(--mut);font-size:.74rem;text-transform:uppercase;letter-spacing:.05em}
+  .card .v{font-size:1.5rem;font-weight:700;margin-top:3px;font-variant-numeric:tabular-nums}
   .pos{color:var(--win)} .neg{color:var(--loss)}
-  h2{font-size:1.1rem;margin:28px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
-  table{width:100%;border-collapse:collapse;font-size:.9rem}
-  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line)}
-  th{color:var(--mut);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em}
+
+  .equity{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:12px 0}
+  .equity .k{color:var(--mut);font-size:.74rem;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+  .equity svg{width:100%;height:84px;display:block}
+
+  h2{font-size:1.05rem;margin:26px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+  .scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{width:100%;border-collapse:collapse;font-size:.88rem;min-width:420px}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--mut);font-weight:600;font-size:.74rem;text-transform:uppercase;letter-spacing:.03em}
   td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
-  .badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.78rem;font-weight:600}
-  .b-win{background:rgba(46,158,107,.15);color:var(--win)}
-  .b-loss{background:rgba(211,91,91,.15);color:var(--loss)}
-  footer{margin-top:40px;color:var(--mut);font-size:.85rem}
-  footer code{background:var(--card);padding:2px 6px;border-radius:6px;border:1px solid var(--line)}
-  .empty{background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:28px;text-align:center;color:var(--mut)}
+  tbody tr:last-child td{border-bottom:0}
+
+  .badge{display:inline-block;padding:1px 9px;border-radius:999px;font-size:.76rem;font-weight:600}
+  .b-win{background:rgba(47,174,118,.16);color:var(--win)}
+  .b-loss{background:rgba(211,91,91,.16);color:var(--loss)}
+  .b-null{background:var(--chip);color:var(--mut)}
+  .strat{display:inline-block;padding:1px 8px;border-radius:6px;font-size:.72rem;font-weight:600;background:var(--chip);color:var(--mut)}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.8rem;color:var(--mut)}
+  .lock{color:var(--gold)}
+
+  .how{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:10px 0}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .step .n{color:var(--gold);font-weight:700;font-size:.85rem}
+  .step .t{font-weight:600;margin:2px 0 4px}
+  .step p{margin:0;color:var(--mut);font-size:.86rem}
+
+  .empty{background:var(--card);border:1px dashed var(--line);border-radius:12px;padding:26px;text-align:center;color:var(--mut)}
+  footer{margin-top:40px;color:var(--mut);font-size:.84rem}
+  footer code{background:var(--card);padding:2px 6px;border-radius:6px;border:1px solid var(--line);font-size:.82rem}
   a{color:var(--accent)}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>L'Avantage · <span class="tag">Pro D2</span></h1>
-    <p>Registro público y verificable. Cada pick se <strong>sella antes del saque</strong> (prueba criptográfica) y se compara con el <strong>cierre de Pinnacle</strong>. Aciertos <em>y</em> fallos, todo a la vista.</p>
+    <h1>L'Avantage · <span class="tag">registro público</span></h1>
+    <p class="sub">Pronósticos de rugby <strong>sellados criptográficamente antes del evento</strong> y revelados después. Nadie puede cambiarlos, borrarlos ni esconder un fallo. <strong>Aciertos y fallos, todo a la vista.</strong></p>
+    <p class="meta" id="meta"><span class="dot"></span>Cargando…</p>
   </header>
 
+  <div class="tabs" id="tabs">
+    <button data-v="pre" class="on">Pre-partido</button>
+    <button data-v="desc">Descansos</button>
+    <button data-v="all">Todo</button>
+  </div>
+  <p class="viewnote" id="viewnote"></p>
+
   <div id="cards" class="cards"></div>
-  <h2>Por competición</h2>
+  <div id="equity"></div>
+
+  <div id="pending"></div>
   <div id="ligas"></div>
-  <h2>Picks revelados</h2>
-  <div id="picks"></div>
+  <div id="revealed"></div>
+
+  <section>
+    <h2>¿Cómo funciona? (commit-reveal)</h2>
+    <div class="how">
+      <div class="step"><div class="n">01 · SELLAR</div><div class="t">Antes del evento</div><p>Se publica el <strong>hash SHA-256</strong> del pick (no el pick). Se ancla la hora con <strong>OpenTimestamps</strong> (Bitcoin) y se sube a GitHub. La selección queda <span class="lock">oculta 🔒</span>.</p></div>
+      <div class="step"><div class="n">02 · JUGAR</div><div class="t">El evento ocurre</div><p>Como el pick estaba cifrado y con hora sellada, <strong>es imposible</strong> cambiarlo, adelantarlo o moverlo después. La rama está protegida: sin reescritura.</p></div>
+      <div class="step"><div class="n">03 · REVELAR</div><div class="t">Después, sí o sí</div><p>Se publica el pick completo + resultado. El hash <strong>debe coincidir</strong> con el sellado. Todo sello vencido debe revelarse: un fallo no se puede esconder.</p></div>
+    </div>
+  </section>
 
   <footer>
-    <p><strong>Cómo se verifica:</strong> cada pick lleva un hash SHA-256 sellado antes del partido.
-    Nadie puede cambiarlo después; cualquiera lo comprueba con <code>python3 herramientas/verificar.py</code>
-    en el <a href="./">repositorio</a>. No es consejo de inversión; el rugby tiene varianza alta;
-    las unidades son simuladas para medir rendimiento.</p>
+    <p><strong>Verifícalo tú mismo:</strong> clona el <a href="https://github.com/LavantageRugby/LavantageRugby.github.io" rel="noopener">repositorio</a> y ejecuta <code>python3 herramientas/verificar.py</code>: comprueba la cadena de sellos, que cada revelado casa con su hash y que no falta ninguno. La hora es verificable con <code>ots verify</code>.</p>
+    <p>Pre-partido se mide también por <strong>CLV sin margen</strong> contra el cierre de Pinnacle. Al <strong>descanso no hay Pinnacle</strong>: se juzga por resultado. No es consejo de inversión; el rugby tiene varianza alta; las unidades son simuladas para medir rendimiento.</p>
   </footer>
 </div>
 
 <script>
 const U={baja:1,"media-baja":1.5,media:2,"media-alta":2.5,alta:3};
 const f=(n,d=2)=>Number(n).toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d});
-const sign=n=>(n>=0?'+':'')+f(n);
+const sign=(n,d=2)=>(n>=0?'+':'')+f(n,d);
 const cls=n=>n>0?'pos':(n<0?'neg':'');
+const esDescanso=r=>String(r.estrategia||'').toUpperCase().startsWith('DESC');
+const STRAT={'PRE-NUM':'Pre · número','BLANDA-T30':'Pre · casa blanda','DESC-TOT':'Descanso · total'};
+const stratLabel=s=>STRAT[s]||s||'—';
+const fdate=ts=>{try{return new Date(ts).toLocaleString('es-ES',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return ts||'';}};
 
-fetch('registro_publico.jsonl').then(r=>r.ok?r.text():'').then(txt=>{
-  const rows=txt.split('\n').filter(Boolean).map(l=>JSON.parse(l));
-  const rev=rows.filter(r=>r.estado==='REVELADO').map(r=>({...r.revelado,liga:r.liga,partido:r.partido,saque:r.saque}));
-  render(rev, rows.length);
-}).catch(()=>render([],0));
+let ROWS=[], VIEW='pre';
 
-function render(rev,total){
-  const cards=document.getElementById('cards');
-  if(!rev.length){
-    cards.innerHTML='';
-    document.getElementById('ligas').innerHTML=
-      '<div class="empty">Arrancamos muy pronto. Los primeros picks de Pro D2 aparecerán aquí, sellados antes del saque. 🏉</div>';
+fetch('registro_publico.jsonl',{cache:'no-store'}).then(r=>r.ok?r.text():'').then(txt=>{
+  ROWS=txt.split('\n').filter(Boolean).map(l=>{try{return JSON.parse(l);}catch(e){return null;}}).filter(Boolean);
+  const upd=ROWS.length?fdate(ROWS[ROWS.length-1].sellado_ts):null;
+  document.getElementById('meta').innerHTML='<span class="dot"></span>'+
+    (ROWS.length? `${ROWS.length} sellos · ${ROWS.filter(r=>r.estado==='REVELADO').length} revelados · actualizado ${upd}`
+                : 'Preparado y a la espera del primer sello.');
+  bindTabs(); render();
+}).catch(()=>{document.getElementById('meta').innerHTML='<span class="dot"></span>Preparado.';bindTabs();render();});
+
+function bindTabs(){
+  document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+    VIEW=b.dataset.v;
+    document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+    render();
+  });
+}
+
+function inView(r){ return VIEW==='all' ? true : (VIEW==='desc' ? esDescanso(r) : !esDescanso(r)); }
+
+function render(){
+  const cards=document.getElementById('cards'), eq=document.getElementById('equity');
+  const pend=document.getElementById('pending'), lig=document.getElementById('ligas'), revEl=document.getElementById('revealed');
+  const note=document.getElementById('viewnote');
+  note.textContent = VIEW==='desc'
+    ? 'Al descanso no hay línea de Pinnacle: se juzga por resultado (sin CLV). Ventana corta — se sella tras estabilizarse la cuota.'
+    : (VIEW==='pre' ? 'Prepartido: ventana amplia, se sella con antelación y se mide también por CLV contra el cierre de Pinnacle.' : '');
+
+  const mine=ROWS.filter(inView);
+  const pending=mine.filter(r=>r.estado==='SELLADO');
+  const rev=mine.filter(r=>r.estado==='REVELADO' && r.revelado).map(r=>Object.assign({},r.revelado,{liga:r.liga,partido:r.partido,estrategia:r.estrategia,saque:r.saque,sellado_ts:r.sellado_ts,seq:r.seq}));
+
+  if(!ROWS.length){
+    cards.innerHTML='';eq.innerHTML='';lig.innerHTML='';revEl.innerHTML='';
+    pend.innerHTML='<div class="empty">🏉 Todo preparado. Los primeros picks aparecerán aquí <strong>sellados antes del evento</strong>. Vuelve pronto.</div>';
     return;
   }
-  let g=0,p=0,neto=0,clvs=[],baten=0;
-  const byL={};
+
+  // --- tarjetas ---
+  let g=0,p=0,nul=0,neto=0,stake=0,clvs=[],baten=0;
   rev.forEach(r=>{
-    if(r.resultado==='acierto')g++; else if(r.resultado==='fallo')p++;
-    neto+=r.neto||0;
+    if(r.resultado==='acierto')g++; else if(r.resultado==='fallo')p++; else nul++;
+    neto+=r.neto||0; stake+=r.stake||U[r.confianza]||1;
     if(r.clv_ev!=null){clvs.push(r.clv_ev); if(r.clv_ev>0)baten++;}
-    const L=byL[r.liga]||(byL[r.liga]={n:0,g:0,p:0,net:0,st:0});
-    L.n++; L.net+=r.neto||0; L.st+=U[r.confianza]||1;
-    if(r.resultado==='acierto')L.g++; else if(r.resultado==='fallo')L.p++;
   });
-  const stake=rev.reduce((a,r)=>a+(U[r.confianza]||1),0);
   const roi=stake?neto/stake*100:0;
   const clvm=clvs.length?clvs.reduce((a,b)=>a+b,0)/clvs.length*100:null;
-  cards.innerHTML=[
-    ['Picks', rev.length],
-    ['Balance', g+'–'+p],
-    ['Neto (u)', `<span class="${cls(neto)}">${sign(neto)}</span>`],
-    ['ROI', `<span class="${cls(roi)}">${sign(roi)}%</span>`],
-    ['CLV medio', clvm==null?'—':`<span class="${cls(clvm)}">${sign(clvm)}%</span>`],
-    ['Baten cierre', clvs.length?`${baten}/${clvs.length}`:'—'],
-  ].map(([k,v])=>`<div class="card"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+  const C=[['Picks',rev.length],['Balance',g+'–'+p+(nul?'–'+nul:'')],
+    ['Neto (u)',`<span class="${cls(neto)}">${sign(neto)}</span>`],
+    ['ROI',`<span class="${cls(roi)}">${sign(roi)}%</span>`]];
+  if(VIEW!=='desc'){C.push(['CLV medio',clvm==null?'—':`<span class="${cls(clvm)}">${sign(clvm)}%</span>`]);
+    C.push(['Baten cierre',clvs.length?`${baten}/${clvs.length}`:'—']);}
+  cards.innerHTML=C.map(([k,v])=>`<div class="card"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
 
-  document.getElementById('ligas').innerHTML='<table><tr><th>Liga</th><th class="num">Picks</th><th class="num">G–P</th><th class="num">Neto (u)</th><th class="num">ROI</th></tr>'+
-    Object.entries(byL).sort((a,b)=>b[1].net-a[1].net).map(([L,d])=>{
-      const roi=d.st?d.net/d.st*100:0;
-      return `<tr><td>${L}</td><td class="num">${d.n}</td><td class="num">${d.g}–${d.p}</td><td class="num ${cls(d.net)}">${sign(d.net)}</td><td class="num ${cls(roi)}">${sign(roi)}%</td></tr>`;
-    }).join('')+'</table>';
+  // --- curva de beneficio ---
+  eq.innerHTML = rev.length>=2 ? equity(rev.slice().sort((a,b)=>(a.seq||0)-(b.seq||0))) : '';
 
-  document.getElementById('picks').innerHTML='<table><tr><th>Partido</th><th>Liga</th><th>Selección</th><th class="num">Cuota</th><th>Resultado</th><th class="num">Neto</th><th class="num">CLV</th></tr>'+
-    rev.slice().reverse().map(r=>`<tr><td>${r.partido}</td><td>${r.liga}</td><td>${r.seleccion}</td><td class="num">${f(r.cuota)}</td>
-      <td><span class="badge ${r.resultado==='acierto'?'b-win':'b-loss'}">${r.resultado}</span></td>
-      <td class="num ${cls(r.neto)}">${sign(r.neto)}</td>
-      <td class="num ${r.clv_ev==null?'':cls(r.clv_ev)}">${r.clv_ev==null?'—':sign(r.clv_ev*100)+'%'}</td></tr>`).join('')+'</table>';
+  // --- sellados aún ocultos ---
+  if(pending.length){
+    pend.innerHTML='<h2>Sellados — pendientes de revelar <span class="lock">🔒</span></h2><div class="scroll"><table>'+
+      '<tr><th>#</th><th>Partido</th><th>Liga</th><th>Tipo</th><th>Sellado</th><th>Hash (prueba)</th></tr>'+
+      pending.slice().reverse().map(r=>`<tr><td>${r.seq||''}</td><td>${esc(r.partido)}</td><td>${esc(r.liga)}</td>
+        <td><span class="strat">${esc(stratLabel(r.estrategia))}</span></td>
+        <td>${fdate(r.sellado_ts)}</td>
+        <td class="mono">${(r.commit_sha256||'').slice(0,16)}…</td></tr>`).join('')+'</table></div>';
+  } else pend.innerHTML='';
+
+  // --- por competición ---
+  if(rev.length){
+    const byL={};
+    rev.forEach(r=>{const L=byL[r.liga]||(byL[r.liga]={n:0,g:0,p:0,net:0,st:0});
+      L.n++;L.net+=r.neto||0;L.st+=r.stake||U[r.confianza]||1;
+      if(r.resultado==='acierto')L.g++; else if(r.resultado==='fallo')L.p++;});
+    lig.innerHTML='<h2>Por competición</h2><div class="scroll"><table><tr><th>Liga</th><th class="num">Picks</th><th class="num">G–P</th><th class="num">Neto (u)</th><th class="num">ROI</th></tr>'+
+      Object.entries(byL).sort((a,b)=>b[1].net-a[1].net).map(([L,d])=>{const roi=d.st?d.net/d.st*100:0;
+        return `<tr><td>${esc(L)}</td><td class="num">${d.n}</td><td class="num">${d.g}–${d.p}</td><td class="num ${cls(d.net)}">${sign(d.net)}</td><td class="num ${cls(roi)}">${sign(roi)}%</td></tr>`;}).join('')+'</table></div>';
+  } else lig.innerHTML='';
+
+  // --- picks revelados ---
+  if(rev.length){
+    revEl.innerHTML='<h2>Picks revelados</h2><div class="scroll"><table>'+
+      '<tr><th>Partido</th><th>Tipo</th><th>Selección</th><th class="num">Cuota</th><th>Resultado</th><th class="num">Neto</th>'+(VIEW!=='desc'?'<th class="num">CLV</th>':'')+'</tr>'+
+      rev.slice().sort((a,b)=>(b.seq||0)-(a.seq||0)).map(r=>{
+        const bc=r.resultado==='acierto'?'b-win':(r.resultado==='fallo'?'b-loss':'b-null');
+        const clv=(VIEW!=='desc')?`<td class="num ${r.clv_ev==null?'':cls(r.clv_ev)}">${r.clv_ev==null?'—':sign(r.clv_ev*100)+'%'}</td>`:'';
+        return `<tr><td>${esc(r.partido)}</td><td><span class="strat">${esc(stratLabel(r.estrategia))}</span></td>
+          <td>${esc(r.seleccion)}</td><td class="num">${f(r.cuota)}</td>
+          <td><span class="badge ${bc}">${esc(r.resultado)}</span></td>
+          <td class="num ${cls(r.neto)}">${sign(r.neto)}</td>${clv}</tr>`;}).join('')+'</table></div>';
+  } else if(!pending.length){
+    revEl.innerHTML='<div class="empty">Aún no hay picks revelados en esta sección. 🏉</div>';
+  } else revEl.innerHTML='';
 }
+
+function equity(rev){
+  let cum=0; const pts=[0]; rev.forEach(r=>{cum+=r.neto||0;pts.push(cum);});
+  const min=Math.min(0,...pts),max=Math.max(0,...pts),W=300,H=84,pad=6,n=pts.length-1||1;
+  const range=(max-min)||1;
+  const sx=i=>pad+i*(W-2*pad)/n, sy=v=>H-pad-(v-min)*(H-2*pad)/range;
+  const d=pts.map((v,i)=>`${i?'L':'M'}${sx(i).toFixed(1)} ${sy(v).toFixed(1)}`).join(' ');
+  const area=`M${sx(0).toFixed(1)} ${sy(0).toFixed(1)} `+pts.map((v,i)=>`L${sx(i).toFixed(1)} ${sy(v).toFixed(1)}`).join(' ')+` L${sx(pts.length-1).toFixed(1)} ${sy(0).toFixed(1)} Z`;
+  const up=pts[pts.length-1]>=0, col=up?'var(--win)':'var(--loss)';
+  const zy=sy(0).toFixed(1);
+  return `<div class="equity"><div class="k">Curva de beneficio (u)</div>
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <path d="${area}" fill="${col}" opacity=".10"/>
+      <line x1="${pad}" y1="${zy}" x2="${W-pad}" y2="${zy}" stroke="var(--line)" stroke-dasharray="3 3"/>
+      <path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg></div>`;
+}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 </script>
 </body>
 </html>
