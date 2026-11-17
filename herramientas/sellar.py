@@ -20,12 +20,32 @@ Uso:
      --mercado handicap --seleccion "Local -7.5" --linea -7.5 --cuota 1.78 \
      --confianza baja --saque 2026-11-21T20:00:00+01:00
 """
-import argparse, json, hashlib, secrets, datetime, pathlib
+import argparse, json, hashlib, secrets, datetime, pathlib, subprocess, os
 
 BASE = pathlib.Path(__file__).resolve().parent.parent
 REG = BASE / "registro_publico.jsonl"
 PEND = BASE / "picks_pendientes"
+ANCLAS = BASE / "anclas_ots"
+OTS = os.environ.get("OTS", os.path.expanduser("~/.venv_ots/bin/ots"))
 GENESIS = "GENESIS"  # prev_hash del primer pick
+
+def anclar_ots(pid, commit):
+    """Crea una prueba de hora PERMANENTE del hash con OpenTimestamps (anclada a Bitcoin).
+    Deja anclas_ots/<pid>.sha256 (el hash) y <pid>.sha256.ots (la prueba). Cualquiera la
+    verifica para siempre con `ots verify`, sin fiarse de nadie. Es la prueba que dura
+    (la hora de push de GitHub caduca ~90 dias)."""
+    ANCLAS.mkdir(exist_ok=True)
+    hf = ANCLAS / f"{pid}.sha256"
+    hf.write_text(commit + "\n", encoding="utf-8")
+    if not pathlib.Path(OTS).exists():
+        return ("FALTA_OTS", "no se encontro 'ots' (instala opentimestamps-client en ~/.venv_ots)")
+    try:
+        r = subprocess.run([OTS, "stamp", str(hf)], capture_output=True, text=True, timeout=90)
+    except Exception as e:
+        return ("ERROR", str(e))
+    if (ANCLAS / f"{pid}.sha256.ots").exists():
+        return ("OK", "")
+    return ("ERROR", (r.stderr or r.stdout)[-200:])
 
 def ahora_madrid():
     # offset fijo +01:00 (CET); en verano el usuario pasa +02:00 a mano si hace falta
@@ -75,11 +95,17 @@ def main():
     with REG.open("a", encoding="utf-8") as f:
         f.write(json.dumps(publico, ensure_ascii=False) + "\n")
 
+    estado_ots, detalle = anclar_ots(pid, commit)
+
     print(f"SELLADO #{seq} {pid}")
     print(f"   hora de sello: {seal_ts}")
     print(f"   prev_hash    : {prev_hash[:16]}{'...' if prev_hash!=GENESIS else ''}")
     print(f"   hash publico : {commit}")
-    print(f"   AVISO: EMPUJA (git push) AHORA, ANTES del saque: la hora del push de GitHub es la prueba.")
+    if estado_ots == "OK":
+        print(f"   OTS          : prueba de hora PERMANENTE creada (anclas_ots/{pid}.sha256.ots)")
+    else:
+        print(f"   OTS          : AVISO no se pudo anclar la hora ({detalle})")
+    print(f"   SIGUIENTE: git add -A && git commit && git push AHORA, ANTES del saque.")
 
 if __name__ == "__main__":
     main()

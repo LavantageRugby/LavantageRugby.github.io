@@ -24,12 +24,19 @@ incumplen**:
    jugó TIENE que estar revelado**: si uno queda "sellado para siempre" después de su saque, el
    verificador lo marca como posible perdido escondido. → Si se sella, se revela. Siempre.
 
-2. **La prueba de la HORA no es la fecha del commit de git.** Esa fecha la pone el autor y se puede
-   falsear. La prueba real de que el pick existía antes del saque es la **hora de PUSH que registra
-   GitHub** (queda en el historial de la plataforma y **no es reescribible**). Por eso la regla es:
-   **sellar y hacer `git push` ANTES del saque.** Además la rama `main` va **protegida: sin
-   force-push y con historial lineal**, para que no se pueda reescribir la historia. (Refuerzo
-   opcional futuro: sello OpenTimestamps anclado a Bitcoin.)
+2. **La prueba de la HORA no es la fecha del commit de git** (esa la pone el autor y se puede
+   falsear). La hora se prueba en **dos capas**:
+   - **Permanente (la que vale para auditar): OpenTimestamps.** Al sellar, el hash del pick se
+     **sella con OpenTimestamps** y queda anclado en la **cadena de Bitcoin**. La prueba vive en
+     `anclas_ots/<id>.sha256.ots` y **cualquiera** la comprueba para siempre, sin fiarse de nadie:
+     `ots verify anclas_ots/<id>.sha256.ots` → da la hora del bloque de Bitcoin, que demuestra que
+     el pick existía antes del saque. (Horas después de sellar se corre
+     `herramientas/actualizar_anclas.sh` para incrustar el anclaje definitivo de Bitcoin.)
+   - **Inmediata (apoyo): la hora de PUSH de GitHub** (no reescribible, pero la API de eventos solo
+     la guarda ~90 días → sirve de refuerzo a corto plazo, no de prueba permanente). Regla igual:
+     **sellar, `git push` y que OTS selle, todo ANTES del saque.**
+   La rama `main` va **protegida: sin force-push y con historial lineal**, para que no se pueda
+   reescribir la historia.
 
 ## Datos que entran en cada decisión (modelo casero)
 

@@ -23,6 +23,7 @@ import json, hashlib, pathlib, datetime, sys
 BASE = pathlib.Path(__file__).resolve().parent.parent
 REG = BASE / "registro_publico.jsonl"
 SELL = BASE / "picks_sellados"
+ANCLAS = BASE / "anclas_ots"
 GENESIS = "GENESIS"
 HASH_KEYS = ("seq","prev_hash","partido","liga","mercado","seleccion","linea",
              "cuota","confianza","saque","seal_ts","nonce")
@@ -51,6 +52,14 @@ def main():
             problemas.append(f"CADENA rota en {rid}: prev_hash no apunta al pick anterior")
         seq_esperada += 1
         prev = r["commit_sha256"]
+
+        # ANCLA OTS: cada pick debe tener su prueba de hora permanente, y el hash anclado
+        # debe ser el del pick. (La verificacion Bitcoin completa: `ots verify` -- ver METODOLOGIA.)
+        hf = ANCLAS / f"{rid}.sha256"; proof = ANCLAS / f"{rid}.sha256.ots"
+        if not proof.exists():
+            problemas.append(f"{rid}: FALTA la prueba OpenTimestamps (anclas_ots/{rid}.sha256.ots)")
+        elif not hf.exists() or hf.read_text(encoding="utf-8").strip() != r["commit_sha256"]:
+            problemas.append(f"{rid}: el hash anclado en OTS NO coincide con el commit del pick")
 
         if r["estado"] == "REVELADO":
             total_rev += 1
@@ -89,7 +98,8 @@ def main():
         print(f"INTEGRIDAD: {len(problemas)} PROBLEMA(S) -- registro NO fiable:")
         for p in problemas: print(f"   - {p}")
         return 1
-    print("INTEGRIDAD: OK -- cadena continua, todo sello revelado a tiempo, ningun hash alterado.")
+    print("INTEGRIDAD: OK -- cadena continua, todo sello revelado a tiempo, ningun hash alterado,")
+    print("            y cada pick tiene su prueba de hora OpenTimestamps (verificable con `ots verify`).")
     return 0
 
 if __name__ == "__main__":

@@ -30,9 +30,11 @@ Cada pick se **sella ANTES del saque** con un esquema *commit-reveal*:
 - **Esconder los perdidos:** los sellos van **encadenados** (cada uno lleva el hash del anterior) y
   **todo pick sellado cuyo partido ya se jugó tiene que estar revelado**. No se puede publicar diez y
   revelar solo los que ganan: `verificar.py` lo caza.
-- **Falsear la hora:** la fecha del commit de git no cuenta (la pone el autor). La prueba es la **hora
-  de push de GitHub** (no reescribible) con la rama protegida sin force-push. Regla: sellar y empujar
-  **antes del saque**. Detalle en [METODOLOGIA.md](METODOLOGIA.md).
+- **Falsear la hora:** la fecha del commit de git no cuenta (la pone el autor). Cada pick se **sella
+  con OpenTimestamps**, anclado a **Bitcoin**: una prueba de hora permanente que cualquiera comprueba
+  para siempre (`ots verify anclas_ots/<id>.sha256.ots`), sin fiarse de nadie. La hora de push de
+  GitHub sirve de apoyo inmediato (pero caduca ~90 días). Regla: sellar y empujar **antes del saque**.
+  Detalle en [METODOLOGIA.md](METODOLOGIA.md).
 
 ## Honestidad (lo que esto NO es)
 
