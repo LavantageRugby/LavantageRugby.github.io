@@ -48,8 +48,10 @@ humedad, punto de rocío, viento y tipo de césped (natural/sintético)**. Base 
 - **Escala de stake por confianza**: baja 1 u · media-baja 1,5 · media 2 · media-alta 2,5 · alta 3.
 - **Neto**: acierto = stake × (cuota − 1); fallo = −stake; nula = 0.
 - **Cuota registrada** = la disponible **en el momento del sello** (así el CLV compara contra el cierre).
-- **CLV** = cuota sellada × prob. implícita del **cierre de Pinnacle** − 1. `> 0` = batió el cierre.
-  (El de-vig fino de Pinnacle se aplica en el cálculo agregado; aquí se guarda el dato base.)
+- **CLV** = cuota sellada × prob. justa del **cierre de Pinnacle a la MISMA línea** − 1. `> 0` = batió
+  el cierre. La prob. justa se calcula **sin margen** (de-vig) con la cuota del lado contrario cuando
+  se aporta; si no, se usa `1/cierre` (con margen, aproximado) y queda marcado. **Siempre se lee junto
+  al ROI** (ver más abajo).
 - **Staking casi plano (a propósito).** En la práctica la inmensa mayoría de picks van a **1 u**,
   alguno a 1,5 y **rara vez (casi nunca) 2**. Es deliberado: así el resultado depende de **acertar el
   pick**, no de "haber acertado con el tamaño de la apuesta". Hace el registro más fácil de auditar.
@@ -60,3 +62,31 @@ humedad, punto de rocío, viento y tipo de césped (natural/sintético)**. Base 
 - Otras ligas pueden registrarse, pero **URC y Top 14 no han mostrado ventaja**: se tratan aparte.
 - **Conclusiones solo con volumen** (objetivo ≥ 50 picks de Pro D2 fuera de muestra).
 - **Precio**: conseguir mejor cuota pesa tanto como el modelo; se busca el mejor precio disponible.
+
+## Lo que pide un sindicato serio (y cómo lo cubrimos)
+
+Un sindicato no se fía de un número bonito; pide pruebas concretas. Qué guardamos y cómo se presenta:
+
+1. **Que la cuota existía de verdad.** En cada sello van **cuota, casa, selección, línea exacta y
+   hora**. Cuando es posible, además la **foto del mercado de Pinnacle en ese mismo minuto**
+   (`pin_sello` = cuota de Pinnacle a nuestra misma selección/línea al sellar). *Pendiente: enganchar
+   la captura externa automática (OddsPapi / The Odds API) desde las sesiones de cuotas, para que ese
+   snapshot lo firme una fuente de fuera y no solo nosotros.*
+2. **Límite y liquidez.** `limite` = cuánto se podía jugar a ese precio (límite de la casa o dinero en
+   Betfair). Una ventaja en mercados de 200–500 € vale poco; se enseña, no se esconde.
+3. **CLV bien medido.** Contra el **cierre SIN MARGEN de Pinnacle y a la MISMA línea** (`revelar.py`
+   lo de-viga con la cuota del lado contrario). Se da **media, % que bate el cierre y, SIEMPRE, junto
+   al ROI**. Lección propia que no olvidamos: en fútbol medimos **CLV +4,9 % con ROI −4,7 %** (n=243)
+   → **el CLV solo NO es prueba de ganancia**. Van juntos siempre.
+4. **Muestra.** Para un sindicato, con menos de ~**300–500 picks** no hay nada que defender (el ≥50 de
+   arriba es para nuestra propia confianza en la señal, no para vender). Se da **n, ROI, IC95, p** y el
+   resultado **quitando el mejor 5 %** (que no dependa de cuatro golpes de suerte).
+5. **Antelación al saque.** Se guarda **cuántos minutos antes del saque** se selló cada pick. No es lo
+   mismo batir el cierre metiéndola 3 días antes en línea blanda que a 1 hora del saque.
+6. **Todo declarado antes** (esta metodología): stake casi plano, rango de cuotas, ligas y mercados.
+   **Nada de borrar picks ni de picks "de prueba"** (la cadena + OTS lo impiden).
+7. **Lo que de verdad hacen: período de prueba EN VIVO.** El histórico solo sirve para que acepten la
+   prueba; luego reciben los picks **en tiempo real** (API o Telegram privado) y miden SU propio CLV y
+   su precio conseguido. Por eso importan la **latencia de envío** y que los picks sean **exclusivos**:
+   publicarlos en abierto antes del saque mata su valor. El commit-reveal encaja justo por eso (no
+   enseña el pick hasta después del partido).

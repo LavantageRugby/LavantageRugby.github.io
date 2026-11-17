@@ -18,7 +18,8 @@ ANTES del saque. Ver METODOLOGIA.md.
 Uso:
   python3 sellar.py --partido "Angouleme-Agen" --liga "Pro D2" \
      --mercado handicap --seleccion "Local -7.5" --linea -7.5 --cuota 1.78 \
-     --confianza baja --saque 2026-11-21T20:00:00+01:00
+     --casa Winamax --confianza baja --saque 2026-11-21T20:00:00+01:00 \
+     --pin_sello 1.74 --limite "400 EUR"      # pin_sello/limite opcionales; en 1x2 se omite --linea
 """
 import argparse, json, hashlib, secrets, datetime, pathlib, subprocess, os
 
