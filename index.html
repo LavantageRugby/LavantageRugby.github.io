@@ -144,7 +144,7 @@ function render(){
 
   const mine=ROWS.filter(inView);
   const pending=mine.filter(r=>r.estado==='SELLADO');
-  const rev=mine.filter(r=>r.estado==='REVELADO' && r.revelado).map(r=>Object.assign({},r.revelado,{liga:r.liga,partido:r.partido,estrategia:r.estrategia,saque:r.saque,sellado_ts:r.sellado_ts,seq:r.seq}));
+  const rev=mine.filter(r=>r.estado==='REVELADO' && r.revelado).map(r=>Object.assign({},r.revelado,{liga:r.liga,partido:r.partido,casa:r.casa,estrategia:r.estrategia,saque:r.saque,sellado_ts:r.sellado_ts,seq:r.seq}));
 
   if(!ROWS.length){
     cards.innerHTML='';eq.innerHTML='';lig.innerHTML='';revEl.innerHTML='';
@@ -174,8 +174,9 @@ function render(){
   // --- sellados aún ocultos ---
   if(pending.length){
     pend.innerHTML='<h2>Sellados — pendientes de revelar <span class="lock">🔒</span></h2><div class="scroll"><table>'+
-      '<tr><th>#</th><th>Partido</th><th>Liga</th><th>Tipo</th><th>Sellado</th><th>Hash (prueba)</th></tr>'+
+      '<tr><th>#</th><th>Partido</th><th>Liga</th><th>Casa</th><th>Tipo</th><th>Sellado</th><th>Hash (prueba)</th></tr>'+
       pending.slice().reverse().map(r=>`<tr><td>${r.seq||''}</td><td>${esc(r.partido)}</td><td>${esc(r.liga)}</td>
+        <td>${esc(r.casa||'')}</td>
         <td><span class="strat">${esc(stratLabel(r.estrategia))}</span></td>
         <td>${fdate(r.sellado_ts)}</td>
         <td class="mono">${(r.commit_sha256||'').slice(0,16)}…</td></tr>`).join('')+'</table></div>';
@@ -195,11 +196,11 @@ function render(){
   // --- picks revelados ---
   if(rev.length){
     revEl.innerHTML='<h2>Picks revelados</h2><div class="scroll"><table>'+
-      '<tr><th>Partido</th><th>Tipo</th><th>Selección</th><th class="num">Cuota</th><th>Resultado</th><th class="num">Neto</th>'+(VIEW!=='desc'?'<th class="num">CLV</th>':'')+'</tr>'+
+      '<tr><th>Partido</th><th>Casa</th><th>Tipo</th><th>Selección</th><th class="num">Cuota</th><th>Resultado</th><th class="num">Neto</th>'+(VIEW!=='desc'?'<th class="num">CLV</th>':'')+'</tr>'+
       rev.slice().sort((a,b)=>(b.seq||0)-(a.seq||0)).map(r=>{
         const bc=r.resultado==='acierto'?'b-win':(r.resultado==='fallo'?'b-loss':'b-null');
         const clv=(VIEW!=='desc')?`<td class="num ${r.clv_ev==null?'':cls(r.clv_ev)}">${r.clv_ev==null?'—':sign(r.clv_ev*100)+'%'}</td>`:'';
-        return `<tr><td>${esc(r.partido)}</td><td><span class="strat">${esc(stratLabel(r.estrategia))}</span></td>
+        return `<tr><td>${esc(r.partido)}</td><td>${esc(r.casa||'')}</td><td><span class="strat">${esc(stratLabel(r.estrategia))}</span></td>
           <td>${esc(r.seleccion)}</td><td class="num">${f(r.cuota)}</td>
           <td><span class="badge ${bc}">${esc(r.resultado)}</span></td>
           <td class="num ${cls(r.neto)}">${sign(r.neto)}</td>${clv}</tr>`;}).join('')+'</table></div>';
