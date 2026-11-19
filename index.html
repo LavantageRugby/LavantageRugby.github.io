@@ -109,8 +109,6 @@ const f=(n,d=2)=>Number(n).toLocaleString('es-ES',{minimumFractionDigits:d,maxim
 const sign=(n,d=2)=>(n>=0?'+':'')+f(n,d);
 const cls=n=>n>0?'pos':(n<0?'neg':'');
 const esDescanso=r=>String(r.estrategia||'').toUpperCase().startsWith('DESC');
-const STRAT={'PRE-NUM':'Pre · número','BLANDA-T30':'Pre · casa blanda','DESC-TOT':'Descanso · total'};
-const stratLabel=s=>STRAT[s]||s||'—';
 const fdate=ts=>{try{return new Date(ts).toLocaleString('es-ES',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});}catch(e){return ts||'';}};
 
 let ROWS=[], VIEW='pre';

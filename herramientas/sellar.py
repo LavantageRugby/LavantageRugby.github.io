@@ -59,10 +59,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--partido", required=True)
     ap.add_argument("--liga", required=True)
-    ap.add_argument("--estrategia", default="PRE-NUM",
-                    help="estrategia (se reporta por separado; solo algunas tienen senal): "
-                         "DESC-TOT (total al descanso, regla T9), BLANDA-T30 (casa blanda >=3%% sobre justo ~30min antes), "
-                         "PRE-NUM (numero a ciegas prepartido, es el CONTROL)")
+    ap.add_argument("--estrategia", required=True, choices=["PREPARTIDO","DESCANSO"],
+                    help="OBLIGATORIA, solo PREPARTIDO o DESCANSO (sin valor por defecto; falla si falta o es otra cosa). "
+                         "DESCANSO empieza por DESC para que esDescanso lo mande a su pestana. "
+                         "Prohibidos COLAB/PRE-NUM y cualquier otro nombre (orden CEO 19/11).")
     ap.add_argument("--mercado", required=True, choices=["handicap","total","1x2"])
     ap.add_argument("--seleccion", required=True,
                     help="p.ej. 'Local -7.5' (handicap), 'Mas de 50.5' (total), 'Local'/'Empate'/'Visitante' (1x2)")
