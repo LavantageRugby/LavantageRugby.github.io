@@ -22,7 +22,7 @@ incumplen**:
    incluye el hash del anterior (`prev_hash`) y un número de orden (`seq`). No se puede borrar,
    insertar ni reordenar ningún pick sin romper la cadena. Y **todo pick sellado cuyo partido ya se
    jugó TIENE que estar revelado**: si uno queda "sellado para siempre" después de su saque, el
-   verificador lo marca como posible perdido escondido. → Si se sella, se revela. Siempre.
+   verificador lo marca como posible perdido escondido. Si se sella, se revela, siempre.
 
 2. **La prueba de la HORA no es la fecha del commit de git** (esa la pone el autor y se puede
    falsear). La hora se prueba en **dos capas**:
@@ -35,8 +35,9 @@ incumplen**:
    - **Inmediata (apoyo): la hora de PUSH de GitHub** (no reescribible, pero la API de eventos solo
      la guarda ~90 días → sirve de refuerzo a corto plazo, no de prueba permanente). Regla igual:
      **sellar, `git push` y que OTS selle, todo ANTES del saque.**
-   La rama `main` va **protegida: sin force-push y con historial lineal**, para que no se pueda
-   reescribir la historia.
+   La rama `master` va **protegida: historial lineal y sin force-push** (salvo una regeneración
+   única el 20/11/2026, documentada en la *Nota de transparencia* al final), para que no se pueda
+   reescribir la historia a escondidas.
 
 ## Datos que entran en cada decisión (modelo casero)
 
@@ -121,3 +122,11 @@ a un sindicato.
     señales, ROI>0 y ganadas>esperadas; se mide en pasivo con el histórico que entregan los lunes
     (desde 23/11), sin que el CEO apueste.
 - **PRE-NUM** — número a ciegas prepartido; es el **control** (hoy CLV ligeramente negativo).
+
+## Nota de transparencia (única)
+
+Los primeros commits del registro (los sellos #1 y #2 y un ajuste de la web) se regeneraron una vez
+el 20/11/2026 por una corrección técnica en los mensajes de commit (metadatos). Ni los picks, ni el
+contenido de los ficheros, ni sus hashes se modificaron: siguen siendo verificables con `verificar.py`
+y con las anclas de tiempo en Bitcoin (OpenTimestamps), que son independientes de git y no cambian.
+Del #3 en adelante el historial no se ha vuelto a tocar.

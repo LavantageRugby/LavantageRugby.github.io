@@ -10,7 +10,7 @@ Cada pick se **sella ANTES del saque** con un esquema *commit-reveal*:
 
 1. **Al sellar** (`herramientas/sellar.py`) se publica solo: `id`, **hora de sello**,
    partido, liga, mercado y un **hash SHA-256**. El pick real (lado, línea, cuota) queda
-   **en secreto** hasta después del partido. → Nadie puede copiarlo ni mover la línea,
+   **en secreto** hasta después del partido. Así nadie puede copiarlo ni mover la línea,
    y queda probado que existía antes del saque.
 2. **Tras el partido** (`herramientas/revelar.py`) se revela el pick completo + marcador +
    acierto/fallo + la **cuota de cierre de Pinnacle** (para el CLV). El hash **no cambia**.
