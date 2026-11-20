@@ -4,7 +4,8 @@ es honesto. Falla (codigo de salida 1) si detecta cualquier trampa:
 
   1) HASH: cada pick revelado coincide EXACTAMENTE con el hash que se sello antes del
      saque -> imposible cambiar el pick despues.
-  2) SELLO ANTES DEL SAQUE: la hora de sello es anterior al saque.
+  2) SELLO A TIEMPO: PREPARTIDO -> la hora de sello es anterior al saque. DESCANSO -> se sella
+     EN VIVO, asi que debe ser posterior al saque y anterior al final del partido (saque + 2h de tope).
   3) CADENA (anti-cherry-picking): cada pick incluye el hash del anterior (prev_hash);
      la cadena tiene que ser continua y en orden. No se puede borrar, insertar ni
      reordenar picks.
@@ -77,10 +78,24 @@ def main():
             h = hashlib.sha256(json.dumps(base, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
             if h == r["commit_sha256"]:
                 ok += 1
-                if dt(sec["seal_ts"]) < dt(sec["saque"]):
-                    antes += 1
+                estrat = (r.get("estrategia") or sec.get("estrategia") or "").upper()
+                seal = dt(sec["seal_ts"]); saque = dt(sec["saque"])
+                if estrat.startswith("DESC"):
+                    # DESCANSO: se sella EN VIVO -> valido si es POSTERIOR al saque y ANTERIOR al
+                    # final del partido (tope saque + 2h si no hay trueEndTime). Antes del saque
+                    # seria imposible; despues del final ya se sabria el resultado.
+                    fin = saque + datetime.timedelta(hours=2)
+                    if saque <= seal <= fin:
+                        antes += 1
+                    elif seal < saque:
+                        problemas.append(f"{rid}: DESCANSO sellado ANTES del saque (imposible en vivo)")
+                    else:
+                        problemas.append(f"{rid}: DESCANSO sellado tras el final del partido (> saque +2h)")
                 else:
-                    problemas.append(f"{rid}: sellado DESPUES del saque")
+                    if seal < saque:
+                        antes += 1
+                    else:
+                        problemas.append(f"{rid}: sellado DESPUES del saque")
             else:
                 problemas.append(f"{rid}: HASH NO COINCIDE (pick alterado tras sellar)")
             rv = r["revelado"]
@@ -107,7 +122,7 @@ def main():
     print("="*58)
     print(f"Picks en el registro : {len(filas)}  (revelados {total_rev})")
     print(f"Hash correcto        : {ok}/{total_rev}")
-    print(f"Sellados ANTES saque : {antes}/{ok}")
+    print(f"Sellos a tiempo      : {antes}/{ok}  (PREPARTIDO antes del saque; DESCANSO en vivo)")
     roi = (neto/staked) if staked else 0.0
     print(f"Balance              : {aciertos}-{fallos}   neto {neto:+.3f} u sobre {staked:.1f} u jugadas")
     print(f"ROI                  : {roi:+.2%}   (muestra n={total_rev}; sin volumen NO concluye nada)")
