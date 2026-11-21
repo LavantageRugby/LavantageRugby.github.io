@@ -9,9 +9,11 @@ es honesto. Falla (codigo de salida 1) si detecta cualquier trampa:
   3) CADENA (anti-cherry-picking): cada pick incluye el hash del anterior (prev_hash);
      la cadena tiene que ser continua y en orden. No se puede borrar, insertar ni
      reordenar picks.
-  4) SIN PERDIDOS ESCONDIDOS: ningun pick puede quedar SELLADO (sin revelar) despues de
-     su saque. Si el partido ya se jugo, el pick DEBE estar revelado. Asi un perdido
-     escondido "dejandolo sellado" salta solo.
+  4) SIN PERDIDOS ESCONDIDOS: un pick sellado cuyo partido ya empezo tiene un PLAZO de
+     VENTANA_HORAS (5 h, regla publica anunciada el 21/11/2026) para revelarse. Dentro del plazo
+     sale "EN JUEGO / pendiente de revelar" (no es fallo); pasado el plazo sin revelar salta la
+     ALERTA "posible perdido escondido". Asi no se esconde un perdido "dejandolo sellado", pero
+     tampoco salta en falso mientras el partido se esta jugando.
 
 OJO con la HORA: la fecha del commit de git NO es prueba (la pone el autor). La prueba de
 que el pick existia antes del saque es la HORA DE PUSH de GitHub (no reescribible) + la
@@ -26,6 +28,12 @@ REG = BASE / "registro_publico.jsonl"
 SELL = BASE / "picks_sellados"
 ANCLAS = BASE / "anclas_ots"
 GENESIS = "GENESIS"
+# Plazo de revelado (regla publica ANUNCIADA el 21/11/2026; ver CHANGELOG.md y README). Un pick
+# sellado cuyo partido ya empezo tiene VENTANA_HORAS para revelarse: dentro del plazo sale "EN JUEGO /
+# pendiente de revelar" (ni fallo ni verde); pasado el plazo sin revelar = ALERTA "posible perdido
+# escondido". Fijo e igual para todos los deportes, no retroactivo, no se cambia caso a caso.
+VENTANA_HORAS = 5
+VENTANA_REVELAR = datetime.timedelta(hours=VENTANA_HORAS)
 HASH_KEYS = ("seq","prev_hash","partido","liga","estrategia","mercado","seleccion","linea",
              "cuota","casa","pin_sello","pin_contrario","limite","fixture_id","market_id",
              "outcome_id","snapshot_sha256","ejecucion","confianza","saque","seal_ts",
@@ -42,6 +50,7 @@ def main():
     ahora = datetime.datetime.now(datetime.timezone.utc)
 
     problemas = []
+    pendientes = []   # picks EN JUEGO dentro del plazo de revelado (amarillo, NO es fallo)
     ok=0; aciertos=fallos=0; neto=0.0; staked=0.0; clvs=[]; mins=[]; antes=0; total_rev=0
     por_est = {}   # desglose por estrategia (un sindicato lo exige separado)
     prev = GENESIS
@@ -114,10 +123,18 @@ def main():
             elif rv["resultado"]=="fallo": d["f"]+=1
             if rv.get("clv_ev") is not None: d["clvs"].append(rv["clv_ev"])
         else:
-            # 4) SELLADO: no puede estar vencido sin revelar
-            if dt(r["saque"]) < ahora:
-                problemas.append(f"{rid}: SELLADO pero su saque ({r['saque']}) ya paso y NO se ha revelado "
-                                 f"(posible perdido escondido)")
+            # 4) SELLADO sin revelar. Antes del saque: normal. Tras el saque hay un PLAZO
+            #    (VENTANA_HORAS) para revelar: dentro del plazo el pick esta EN JUEGO / pendiente
+            #    (amarillo, NO es fallo); pasado el plazo sin revelar salta la ALERTA roja.
+            saque_dt = dt(r["saque"])
+            if saque_dt < ahora:
+                limite = saque_dt + VENTANA_REVELAR
+                if ahora <= limite:
+                    pendientes.append(f"{rid}: EN JUEGO / pendiente de revelar "
+                                      f"(saque {r['saque']}; plazo para revelar hasta {limite.isoformat()})")
+                else:
+                    problemas.append(f"{rid}: SELLADO y pasadas {VENTANA_HORAS} h del saque "
+                                     f"({r['saque']}) sin revelar (posible perdido escondido)")
 
     print("="*58)
     print(f"Picks en el registro : {len(filas)}  (revelados {total_rev})")
@@ -141,10 +158,17 @@ def main():
             nota = "  (CLV casi mecanico: juzgar por resultado)" if e=="BLANDA-T30" else ""
             print(f"   {e:<12} n={d['n']:<3} {d['a']}-{d['f']}  ROI {r_:+.1%}{cl}{nota}")
     print("="*58)
+    if pendientes:
+        print(f"EN JUEGO / pendientes de revelar (amarillo, dentro del plazo de {VENTANA_HORAS} h): {len(pendientes)}")
+        for p in pendientes: print(f"   · {p}")
     if problemas:
         print(f"INTEGRIDAD: {len(problemas)} PROBLEMA(S) -- registro NO fiable:")
         for p in problemas: print(f"   - {p}")
         return 1
+    if pendientes:
+        print("INTEGRIDAD: OK (con picks EN JUEGO) -- la cadena, los hashes y los sellos estan intactos;")
+        print(f"            {len(pendientes)} pick(s) jugandose o esperando revelado dentro del plazo de {VENTANA_HORAS} h. NO es un fallo.")
+        return 0
     print("INTEGRIDAD: OK -- cadena continua, todo sello revelado a tiempo, ningun hash alterado,")
     print("            y cada pick tiene su prueba de hora OpenTimestamps (verificable con `ots verify`).")
     return 0

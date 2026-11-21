@@ -22,7 +22,9 @@ incumplen**:
    incluye el hash del anterior (`prev_hash`) y un número de orden (`seq`). No se puede borrar,
    insertar ni reordenar ningún pick sin romper la cadena. Y **todo pick sellado cuyo partido ya se
    jugó TIENE que estar revelado**: si uno queda "sellado para siempre" después de su saque, el
-   verificador lo marca como posible perdido escondido. Si se sella, se revela, siempre.
+   verificador lo marca como posible perdido escondido. Si se sella, se revela, siempre. Hay un **plazo de
+   5 h desde el saque** para revelar: mientras tanto el pick figura "en juego / pendiente" (no como fallo);
+   pasado el plazo sin revelar, salta la alerta. *(Regla anunciada el 21/11/2026; ver `CHANGELOG.md`.)*
 
 2. **La prueba de la HORA no es la fecha del commit de git** (esa la pone el autor y se puede
    falsear). La hora se prueba en **dos capas**:

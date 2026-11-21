@@ -28,8 +28,10 @@ Cada pick se **sella ANTES del saque** con un esquema *commit-reveal*:
 ## Dos trampas que NO se pueden hacer aquí
 
 - **Esconder los perdidos:** los sellos van **encadenados** (cada uno lleva el hash del anterior) y
-  **todo pick sellado cuyo partido ya se jugó tiene que estar revelado**. No se puede publicar diez y
-  revelar solo los que ganan: `verificar.py` lo caza.
+  **todo pick sellado cuyo partido ya se jugó tiene que estar revelado**. Hay un **plazo de 5 h desde el
+  saque** para revelar: mientras el partido se juega, el pick figura como "en juego / pendiente" (no como
+  fallo); pasado ese plazo sin revelar, `verificar.py` lo marca como posible perdido escondido. No se puede
+  publicar diez y revelar solo los que ganan. *(Regla anunciada el 21/11/2026; ver [CHANGELOG.md](CHANGELOG.md).)*
 - **Falsear la hora:** la fecha del commit de git no cuenta (la pone el autor). Cada pick se **sella
   con OpenTimestamps**, anclado a **Bitcoin**: una prueba de hora permanente que cualquiera comprueba
   para siempre (`ots verify anclas_ots/<id>.sha256.ots`), sin fiarse de nadie. La hora de push de
