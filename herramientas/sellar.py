@@ -19,7 +19,7 @@ Uso:
   python3 sellar.py --partido "Angouleme-Agen" --liga "Pro D2" \
      --mercado handicap --seleccion "Local -7.5" --linea -7.5 --cuota 1.78 \
      --casa Winamax --confianza baja --saque 2026-11-21T20:00:00+01:00 \
-     --pin_sello 1.74 --limite "400 EUR"      # pin_sello/limite opcionales; en 1x2 se omite --linea
+     --pin_sello 1.74      # pin_sello opcional; en 1x2 se omite --linea
 """
 import argparse, json, hashlib, secrets, datetime, pathlib, subprocess, os
 
@@ -75,7 +75,7 @@ def main():
     ap.add_argument("--pin_sello", type=float, default=None,
                     help="cuota de Pinnacle en ESA MISMA seleccion/linea en el momento del sello (prueba de que el precio existia y contexto de mercado)")
     ap.add_argument("--limite", default=None,
-                    help="cuanto se podia jugar a ese precio: limite de la casa o liquidez en Betfair, p.ej '500 EUR'")
+                    help="OBSOLETO E IGNORADO (21/11/2026): ya no se publican limites. Se acepta por compatibilidad, pero NO se guarda.")
     # Referencia a OddsPapi: lo que hace la prueba de la cuota INDEPENDIENTE (cualquiera la re-consulta
     # en /historical-odds, no tiene que fiarse de nuestro JSON). Lo rellenan las sesiones de cuotas.
     ap.add_argument("--fixture_id", default=None, help="OddsPapi fixture_id (re-verificar en /historical-odds)")
@@ -88,7 +88,7 @@ def main():
     ap.add_argument("--ejecucion", default="sellada_sin_ejecucion_comprobada",
                     help="estado de ejecucion. Por defecto 'cuota sellada, sin ejecucion comprobada' (historico). Si se jugo de verdad, se anota la cuota obtenida al revelar (slippage).")
     ap.add_argument("--op_foto", default=None,
-                    help="ruta al JSON que saca `sello_op.py foto --casa pinnacle` (sesion de cuotas): rellena fixture/market/outcome/pin_sello/pin_contrario/limite que no pongas a mano")
+                    help="ruta al JSON que saca `sello_op.py foto --casa pinnacle` (sesion de cuotas): rellena fixture/market/outcome/pin_sello/pin_contrario que no pongas a mano")
     ap.add_argument("--op_crudo", default=None,
                     help="ruta al crudo .json.gz que cita ese JSON (datos/sellos_op/...); se descomprime, se guarda como snapshot y su sha256 debe casar con crudo_sha256")
     a = ap.parse_args()
@@ -100,7 +100,7 @@ def main():
         if a.fixture_id is None: a.fixture_id = op.get("fixture_id")
         if a.market_id is None: a.market_id = op.get("market_id")
         if a.outcome_id is None: a.outcome_id = op.get("outcome_id")
-        if a.limite is None: a.limite = (op.get("sello") or {}).get("limite")
+        # limite: ya NO se rellena (politica 21/11/2026: no se publican limites; se fija a null al sellar)
         # pin_sello/pin_contrario solo si la foto es de Pinnacle (son la referencia de CLV)
         if op.get("casa") == "pinnacle":
             if a.pin_sello is None: a.pin_sello = (op.get("sello") or {}).get("cuota")
@@ -140,7 +140,12 @@ def main():
         "seq": seq, "prev_hash": prev_hash,
         "partido": a.partido, "liga": a.liga, "estrategia": a.estrategia, "mercado": a.mercado,
         "seleccion": a.seleccion, "linea": a.linea, "cuota": a.cuota, "casa": a.casa,
-        "pin_sello": a.pin_sello, "pin_contrario": a.pin_contrario, "limite": a.limite,
+        "pin_sello": a.pin_sello, "pin_contrario": a.pin_contrario,
+        # POLITICA (21/11/2026): NO se publican limites de apuesta. Un limite es relativo al bankroll (lo que
+        # para nosotros es el maximo, para un sindicato con recursos es calderilla) y solo da imagen de pequenos;
+        # la ventaja se prueba con el CLV y el resultado. Se fija a null; sigue en el hash solo para que los
+        # picks viejos que si lo llevan sigan verificando.
+        "limite": None,
         "fixture_id": a.fixture_id, "market_id": a.market_id, "outcome_id": a.outcome_id,
         "snapshot_sha256": snap_sha, "ejecucion": a.ejecucion,
         "confianza": a.confianza, "saque": a.saque, "seal_ts": seal_ts,

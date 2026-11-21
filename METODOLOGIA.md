@@ -77,8 +77,12 @@ Un sindicato no se fía de un número bonito; pide pruebas concretas. Qué guard
    y comprueba qué precio tenía Pinnacle en ese minuto, **sin fiarse de nosotros**. El `snapshot` crudo
    se guarda y se ancla con OTS solo como apoyo. *(Pendiente: que las sesiones de cuotas rellenen esos
    ids y el snapshot al sellar.)*
-2. **Límite y liquidez.** `limite` = cuánto se podía jugar a ese precio (límite de la casa o dinero en
-   Betfair). Una ventaja en mercados de 200–500 € vale poco; se enseña, no se esconde.
+2. **Por qué NO publicamos límites de apuesta.** Un límite es **relativo al bankroll**: lo que para una banca
+   pequeña es el máximo, para un sindicato con recursos es calderilla, así que enseñar "cabían 28 €" solo da
+   imagen de pequeños sin probar nada. La ventaja se demuestra con el **CLV contra el cierre de Pinnacle**
+   (punto 3) y con el **resultado**, no con el tamaño que cupiera. Por eso los picks no llevan límite. *(Algunos
+   de los primeros picks sí lo incluyen, por quedar fijado en su hash; no se puede quitar sin romper la prueba
+   de integridad.)*
 3. **CLV bien medido.** Contra el **cierre SIN MARGEN de Pinnacle y a la MISMA línea** (`revelar.py`
    lo de-viga con la cuota del lado contrario). Se da **media, % que bate el cierre y, SIEMPRE, junto
    al ROI**. Lección propia que no olvidamos: en fútbol medimos **CLV +4,9 % con ROI −4,7 %** (n=243)
