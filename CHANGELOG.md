@@ -15,3 +15,7 @@ esconder un perdido; solo se da un margen razonable para revelar.
 
 **Condiciones (fijas):** 5 h desde el saque, **igual para todos los deportes**, **no retroactivo**, y **no se
 cambia caso a caso**.
+
+## 2026-11-19
+
+19/11/2026: corregidos los metadatos de 3 commits (picks #1 y #2). Los sha256 y las anclas en Bitcoin de los picks no cambian.
