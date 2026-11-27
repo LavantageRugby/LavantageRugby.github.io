@@ -197,7 +197,7 @@ function render(){
   if(rev.length){
     revEl.innerHTML='<h2>Picks revelados</h2><div class="scroll"><table>'+
       '<tr><th>Fecha</th><th>Partido</th><th>Casa</th><th>Tipo</th><th>Selección</th><th class="num">Cuota</th><th>Resultado</th><th class="num">Neto</th>'+(VIEW!=='desc'?'<th class="num">CLV</th>':'')+'</tr>'+
-      rev.slice().sort((a,b)=>(b.seq||0)-(a.seq||0)).map(r=>{
+      rev.slice().sort((a,b)=>(new Date(b.saque)-new Date(a.saque))||((b.seq||0)-(a.seq||0))).map(r=>{
         const bc=r.resultado==='acierto'?'b-win':(r.resultado==='fallo'?'b-loss':'b-null');
         const clv=(VIEW!=='desc')?`<td class="num ${r.clv_ev==null?'':cls(r.clv_ev)}">${r.clv_ev==null?'—':sign(r.clv_ev*100)+'%'}</td>`:'';
         return `<tr><td>${fday(r.saque)}</td><td>${esc(r.partido)}</td><td>${esc(r.casa||'')}</td><td>${tipoLabel(r)}</td><td>${esc(r.seleccion)}</td><td class="num">${f(r.cuota)}</td>
